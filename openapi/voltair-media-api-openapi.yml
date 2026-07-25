@@ -1,0 +1,937 @@
+openapi: 3.0.3
+info:
+  title: Voltair ApiKeys Media API
+  version: 0.1.0
+  description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
+
+    All timestamp fields on this API (createdAt, updatedAt, scheduledFor, capturedAt, expiresAt, deletedAt, etc.) are Unix timestamps in milliseconds since the epoch (UTC). Both request and response bodies use this representation.'
+servers:
+- url: /
+security:
+- BearerAuth: []
+- ApiKeyAuth: []
+tags:
+- name: Media
+paths:
+  /media:
+    get:
+      tags:
+      - Media
+      operationId: listMedia
+      summary: List media for a mission
+      parameters:
+      - name: missionId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: siteId
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: vehicleId
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: mediaType
+        in: query
+        schema:
+          type: string
+        description: Comma-separated media types (image, video)
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MissionMedia'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags:
+      - Media
+      operationId: createMedia
+      summary: Create a media row
+      description: 'Creates a mission_media row and returns it along with a short-lived
+
+        presigned S3 upload URL the caller uses to PUT the actual object.
+
+        '
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMediaRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - transactionId
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/MissionMedia'
+                    - type: object
+                      required:
+                      - uploadUrl
+                      properties:
+                        uploadUrl:
+                          type: string
+                          description: Presigned PUT URL valid for a short window.
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /media/download-url:
+    post:
+      tags:
+      - Media
+      operationId: createMediaDownloadUrl
+      summary: Issue a signed URL for the mission-zip download
+      description: 'Returns a short-lived HMAC-signed URL pointing at /media/download.zip
+
+        that carries its own auth proof in the query string, so a plain
+
+        `<a href download>` click in the browser can trigger the download
+
+        without forging an Authorization header.
+
+        '
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMediaDownloadUrlRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                    - url
+                    - expiresAt
+                    properties:
+                      url:
+                        type: string
+                      expiresAt:
+                        type: string
+                        format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /media/download.zip:
+    get:
+      tags:
+      - Media
+      operationId: downloadMissionMediaZip
+      summary: Download all (optionally filtered) mission media as a streaming zip
+      description: 'Streams a zip archive containing the original media files for a mission.
+
+        The archive is generated server-side by fetching each object directly
+
+        from S3 — no client-side file-count limits or cross-origin navigation.
+
+        Entries are organised as `<siteName>/<ISO-timestamp>.<ext>` with
+
+        unassigned media grouped under `_unassigned/`.
+
+        '
+      parameters:
+      - name: missionId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: siteId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+        description: Restrict to a single site.
+      - name: mediaIds
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 'Comma-separated list of media UUIDs. Overrides `siteId` when set;
+
+          the zip contains exactly these rows, ordered by site and capture time.
+
+          '
+      - name: includeEvidenceCrops
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - 'true'
+        description: 'When `true`, annotated evidence crops (original photo cropped
+
+          around each defect_evidence bbox with a priority-colored
+
+          stroke) are rendered on demand and appended under `evidence/`.
+
+          Opt-in because rendering is CPU-bound and extends the download.
+
+          On the signed-URL path the flag is covered by the HMAC claims.
+
+          '
+      responses:
+        '200':
+          description: Streaming zip archive
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="mission-<uuid>.zip"
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /media/{mediaId}/download:
+    parameters:
+    - name: mediaId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Media
+      operationId: downloadMissionMediaSingle
+      summary: Download a single media object
+      description: 'Streams the original S3 object for a single media row with an
+
+        `attachment` Content-Disposition header. Used by the demo-ui
+
+        lightbox and inspection-row download buttons to avoid the CORS
+
+        and cross-origin `<a download>` limitations of going directly
+
+        to CloudFront.
+
+        '
+      responses:
+        '200':
+          description: Raw media bytes
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="2026-04-18T00-12-34Z-6c858984.JPG"
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          description: Upstream S3 read failed
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /defect-evidence/{evidenceId}/download:
+    parameters:
+    - name: evidenceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Media
+      operationId: downloadDefectEvidence
+      summary: Download the annotated evidence crop for a defect_evidence row
+      description: 'Renders the downloadable artifact for one defect_evidence row on
+
+        demand. When the row carries a bbox, the response is the ORIGINAL
+
+        photo cropped to a square window with 30% margin around the bbox and
+
+        the bbox stroked in the defect''s priority color — exactly what the
+
+        platform''s evidence viewer shows on screen. When the row has no bbox
+
+        (non-CVAT-sourced evidence), the original object is streamed
+
+        unmodified. Replaces the retired stored crop derivatives.
+
+        '
+      responses:
+        '200':
+          description: Annotated crop JPEG (or the original object when no bbox)
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="annotated-2026-04-18T00-12-34Z-6c858984.jpg"
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          description: Upstream S3 read failed
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /media/{mediaId}:
+    parameters:
+    - name: mediaId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Media
+      operationId: getMedia
+      summary: Get media item
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MissionMedia'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /media/{mediaId}/comments:
+    parameters:
+    - name: mediaId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Media
+      operationId: listMediaComments
+      summary: List comments on a media item
+      description: 'Returns the comments attached to a media item in chronological
+
+        (oldest-first) order. Each comment''s `actor` is expanded; for
+
+        actor.type == "user", the `actor.user` object contains the first
+
+        name, last name, and email of the commenter.
+
+        '
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaComment'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags:
+      - Media
+      operationId: createMediaComment
+      summary: Add comment to media
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMediaCommentRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - transactionId
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MediaComment'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  schemas:
+    CreateMediaRequest:
+      type: object
+      required:
+      - missionId
+      - vehicleId
+      - source
+      - mediaType
+      - capturedAt
+      - sizeBytes
+      properties:
+        missionId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        source:
+          type: string
+          description: Free-form tag describing how the media reached the API (e.g. "contractor-upload", "screenshot").
+        mediaType:
+          $ref: '#/components/schemas/MediaType'
+        capturedAt:
+          type: number
+          description: Unix-ms timestamp when the media was captured.
+        sizeBytes:
+          type: integer
+          description: Size of the S3 object in bytes (used by the zip endpoint's progress UI).
+        geoLocation:
+          allOf:
+          - $ref: '#/components/schemas/GeoLocation'
+          nullable: true
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type: string
+          nullable: true
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    GeoPathPoint:
+      type: object
+      required:
+      - timestampSec
+      - lat
+      - lng
+      properties:
+        timestampSec:
+          type: number
+        lat:
+          type: number
+        lng:
+          type: number
+        altitude:
+          type: number
+    CreateMediaCommentRequest:
+      type: object
+      required:
+      - text
+      properties:
+        text:
+          type: string
+    GeoLocation:
+      type: object
+      required:
+      - lat
+      - lng
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+        altitude:
+          type: number
+    CaptureType:
+      type: string
+      nullable: true
+      enum:
+      - rgb
+      - thermal
+      description: Spectral modality of the frame, served directly from mission_media.capture_type (the single source of truth). null means the modality is unknown (not yet classified); it is never coerced to rgb.
+    MediaType:
+      type: string
+      enum:
+      - image
+      - video
+    Resolution:
+      type: object
+      required:
+      - width
+      - height
+      properties:
+        width:
+          type: integer
+        height:
+          type: integer
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    CreateMediaDownloadUrlRequest:
+      type: object
+      required:
+      - missionId
+      properties:
+        missionId:
+          type: string
+          format: uuid
+        siteId:
+          type: string
+          format: uuid
+          description: Optional — narrows the download to a single site.
+        mediaIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: 'Optional — narrows the download to a specific list of media rows.
+
+            When present, takes precedence over `siteId`.
+
+            '
+        includeEvidenceCrops:
+          type: boolean
+          description: 'Optional — opts the zip into the annotated evidence-crop pass
+
+            (mirrors `includeEvidenceCrops` on /media/download.zip). Folded
+
+            into the signed URL''s HMAC claims.
+
+            '
+    MissionMedia:
+      type: object
+      required:
+      - id
+      - organizationId
+      - missionId
+      - vehicleId
+      - mediaType
+      - captureType
+      - url
+      - thumbnailUrl
+      - capturedAt
+      - geoLocation
+      - deletedAt
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+          description: Reference to the vehicle (e.g. drone) that captured this media
+        siteId:
+          type: string
+          format: uuid
+        mediaType:
+          $ref: '#/components/schemas/MediaType'
+        captureType:
+          $ref: '#/components/schemas/CaptureType'
+        url:
+          type: string
+          description: Opaque asset URL
+        thumbnailUrl:
+          type: string
+        capturedAt:
+          type: number
+        captureDevice:
+          type: string
+          description: Camera/sensor used for capture (e.g. "Zenmuse H30T Wide")
+        orientation:
+          $ref: '#/components/schemas/GimbalOrientation'
+        focalLength:
+          type: number
+          description: Focal length in mm
+        digitalZoom:
+          type: number
+          description: Digital zoom ratio (1.0 = no zoom)
+        fov:
+          type: number
+          description: Diagonal field of view in degrees
+        resolution:
+          $ref: '#/components/schemas/Resolution'
+        geoLocation:
+          allOf:
+          - $ref: '#/components/schemas/GeoLocation'
+          nullable: true
+          description: Required for images; null for video
+        duration:
+          type: number
+          description: Video length in seconds
+        geoPath:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeoPathPoint'
+          description: Video flight path; null for images
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+        commentCount:
+          type: integer
+          description: Count of comments attached to this media row.
+        thermalRange:
+          type: object
+          nullable: true
+          description: Compact Fahrenheit min/max thermal scale for lightbox overlays, derived from mission_media.metadata thermal stats. This is DATA, not a modality classifier (see captureType). null when the frame has no thermal stats, so the overlay simply hides.
+          properties:
+            minTempF:
+              type: number
+              nullable: true
+            maxTempF:
+              type: number
+              nullable: true
+        thermalDisplayRamp:
+          type: array
+          nullable: true
+          description: 'Measured per-image display ramp: ordered hex color stops (cold->hot, e.g. ["#151515", ..., "#f7f7f7"]) recovered by correlating the frame''s temperature grid with its rendered pixels. The client renders these stops directly as the thermal scale-bar gradient (top=hot), so the bar matches the frame''s actual pixels for any palette — including Skydio''s per-image isotherm overlay, which a palette name cannot describe. This is a DISPLAY fact, distinct from captureType (spectral modality) and thermalRange (temperature data). null when the frame has no measured ramp, so the overlay hides.'
+          items:
+            type: string
+    MediaComment:
+      type: object
+      required:
+      - id
+      - mediaId
+      - text
+      - createdAt
+      - actor
+      properties:
+        id:
+          type: string
+          format: uuid
+        mediaId:
+          type: string
+          format: uuid
+        text:
+          type: string
+        createdAt:
+          type: number
+        actor:
+          type: object
+          required:
+          - id
+          - type
+          properties:
+            id:
+              type: string
+              format: uuid
+            type:
+              type: string
+              enum:
+              - user
+              - api_key
+              - system
+            user:
+              nullable: true
+              type: object
+              required:
+              - id
+              - firstName
+              - lastName
+              - email
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                avatarUrl:
+                  type: string
+                  nullable: true
+    GimbalOrientation:
+      type: object
+      required:
+      - yaw
+      - pitch
+      - roll
+      properties:
+        yaw:
+          type: number
+          description: Gimbal yaw in degrees
+        pitch:
+          type: number
+          description: Gimbal pitch in degrees
+        roll:
+          type: number
+          description: Gimbal roll in degrees
+  responses:
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  parameters:
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Cognito JWT access token
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Organization-scoped API key

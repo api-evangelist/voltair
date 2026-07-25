@@ -1,0 +1,250 @@
+openapi: 3.0.3
+info:
+  title: Voltair ApiKeys Identity API
+  version: 0.1.0
+  description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
+
+    All timestamp fields on this API (createdAt, updatedAt, scheduledFor, capturedAt, expiresAt, deletedAt, etc.) are Unix timestamps in milliseconds since the epoch (UTC). Both request and response bodies use this representation.'
+servers:
+- url: /
+security:
+- BearerAuth: []
+- ApiKeyAuth: []
+tags:
+- name: Identity
+paths:
+  /me:
+    get:
+      tags:
+      - Identity
+      operationId: getMe
+      summary: Get authenticated caller
+      description: Returns the user row, role row, and resolved permission list for the authenticated caller, derived from the auth context's own `auth_lookup_by_cognito_id`. Unlike `GET /users/{id}` and `GET /roles`, this endpoint is keyed to the JWT (not to the currently viewed organization), so it works for super-admins whose user/role rows live in the cluster-internal org but who are viewing a different tenant. Authenticated callers always have permission to read their own identity, so the route is not gated by a `Requires(...)` permission check.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                    - user
+                    - role
+                    - permissions
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      role:
+                        $ref: '#/components/schemas/Role'
+                      permissions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Permission'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  schemas:
+    User:
+      type: object
+      required:
+      - id
+      - actorId
+      - cognitoId
+      - firstName
+      - lastName
+      - email
+      - status
+      - deletedAt
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        actorId:
+          type: string
+          format: uuid
+        cognitoId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        avatarUrl:
+          type: string
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        invitedAt:
+          type: number
+          nullable: true
+        joinedAt:
+          type: number
+          nullable: true
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+    Permission:
+      type: object
+      required:
+      - resource
+      - level
+      properties:
+        resource:
+          $ref: '#/components/schemas/PermissionResource'
+        level:
+          $ref: '#/components/schemas/PermissionLevel'
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    UserStatus:
+      type: string
+      enum:
+      - active
+      - invited
+      - deactivated
+    Role:
+      type: object
+      required:
+      - id
+      - name
+      - description
+      - permissions
+      - isSystem
+      - canSwitchOrganizations
+      - deletedAt
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+          nullable: true
+          description: NULL for global roles (e.g. super-admin)
+        slug:
+          type: string
+          nullable: true
+          description: Stable identifier for the super-admin role
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+        isSystem:
+          type: boolean
+        canSwitchOrganizations:
+          type: boolean
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+    PermissionResource:
+      type: string
+      enum:
+      - sites
+      - missions
+      - media
+      - organization
+      - users
+      - roles
+      - billing
+      - developer
+      - events
+      - transactions
+    PermissionLevel:
+      type: string
+      enum:
+      - none
+      - read
+      - write
+  responses:
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Cognito JWT access token
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Organization-scoped API key

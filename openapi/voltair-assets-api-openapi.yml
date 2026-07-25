@@ -1,0 +1,892 @@
+openapi: 3.0.3
+info:
+  title: Voltair ApiKeys Assets API
+  version: 0.1.0
+  description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
+
+    All timestamp fields on this API (createdAt, updatedAt, scheduledFor, capturedAt, expiresAt, deletedAt, etc.) are Unix timestamps in milliseconds since the epoch (UTC). Both request and response bodies use this representation.'
+servers:
+- url: /
+security:
+- BearerAuth: []
+- ApiKeyAuth: []
+tags:
+- name: Assets
+paths:
+  /assets:
+    get:
+      tags:
+      - Assets
+      operationId: listAssets
+      summary: List assets
+      description: 'Lists assets filtered by `siteId` (required). RLS confines results
+
+        to the caller''s organization.
+
+        '
+      parameters:
+      - name: siteId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: priority
+        in: query
+        schema:
+          type: string
+        description: Comma-separated priorities (high, medium, low, none)
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Asset'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /assets/{assetId}:
+    parameters:
+    - name: assetId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Assets
+      operationId: getAsset
+      summary: Get asset
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Asset'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /defects:
+    get:
+      tags:
+      - Assets
+      operationId: listDefects
+      summary: List defects for an asset
+      description: 'Lists defects filtered by `assetId` (required). RLS confines
+
+        results to the caller''s organization.
+
+        '
+      parameters:
+      - name: assetId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Defect'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /defects/{defectId}:
+    parameters:
+    - name: defectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    patch:
+      tags:
+      - Assets
+      operationId: updateDefect
+      summary: Update a defect
+      description: "Partial update of one or more mutable fields:\n  * `workDoneAt` -- Unix ms to mark the defect as addressed,\n    null to clear the mark (undo).\n  * `defectPriority` -- 1..4. Sending this field always sets\n    `prioritySource='manual'` so a subsequent bulk schema edit\n    cannot overwrite the reviewer's decision. May be sent\n    standalone; sending `prioritySource: 'manual'` alongside\n    is allowed but redundant.\n  * `prioritySource: 'mapping'` (alone, without\n    `defectPriority`) -- revert path. Re-derives\n    `defectPriority` from the org's active\n    `defect_priority_mappings` entry for this row's\n    `(asset_type, defect_name)` tuple. 409 with\n    `code='no_mapping_baseline'` if no live row in the same\n    tuple currently carries a mapping-derived priority (the\n    schema must be updated or the CVAT export re-run before a\n    revert can succeed).\n  * `prioritySource: 'cvat_other_defect'` -- read-only via\n    this endpoint; only the CVAT export can assign that source.\n  * `reviewed` -- bool. true stamps `reviewedAt=now()` and\n    `reviewedByActorId=<caller>` (the customer-portal \"Reviewed\n    by\" mark); false clears both. The reviewer identity is taken\n    from the auth context, never the body.\nAll writes trigger the `stream_priority_defects` database\ntrigger, which cascades through voltair-streams-priority to\nrecompute the owning asset and (if changed) site priority.\n"
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workDoneAt:
+                  type: number
+                  nullable: true
+                  description: Unix ms timestamp. Null clears the field.
+                defectPriority:
+                  type: integer
+                  minimum: 1
+                  maximum: 4
+                  description: Manual priority override. Sets prioritySource='manual'.
+                prioritySource:
+                  type: string
+                  enum:
+                  - manual
+                  - mapping
+                  description: 'Sent alone with value ''mapping'' to revert a manual
+
+                    override (re-derives priority from the active
+
+                    mapping). Sent with defectPriority and value
+
+                    ''manual'' is allowed but redundant -- defectPriority
+
+                    alone implies manual.
+
+                    '
+                reviewed:
+                  type: boolean
+                  description: 'Customer-portal "Reviewed by" mark. true stamps
+
+                    reviewedAt + reviewedByActorId from the auth context;
+
+                    false clears both.
+
+                    '
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - transactionId
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Defect'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /defects:bulk-priority:
+    post:
+      tags:
+      - Assets
+      operationId: bulkUpdateDefectPriority
+      summary: Bulk-update defect priority for a single (assetType, defectName) tuple
+      description: 'Remaps every existing defect row in the caller''s organization
+
+        whose `(assetType, defectName)` matches the request to a new
+
+        priority. Optionally also rewrites the org''s active
+
+        `defect_priority_mapping` so future CVAT exports use the new
+
+        value as the schema-derived default.
+
+
+        Reviewer manual overrides are NEVER touched -- the bulk UPDATE
+
+        filters by `priority_source=''mapping''`. CVAT "Other" catch-all rows
+
+        (`priority_source=''cvat_other_defect''`) are also excluded.
+
+
+        At least one of `applyToExisting` or `alsoUpdateMapping` must be
+
+        true (otherwise the request is a no-op and is rejected).
+
+
+        Permission: `defects:write`.
+
+        '
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - assetType
+              - defectName
+              - priority
+              properties:
+                assetType:
+                  type: string
+                  description: Slug of the asset_type column (e.g. 'wood_pole').
+                defectName:
+                  type: string
+                  description: 'Composed defect_name string (e.g. ''Pole (Wood): Crack/Split - major'').'
+                priority:
+                  type: integer
+                  minimum: 1
+                  maximum: 4
+                applyToExisting:
+                  type: boolean
+                  default: false
+                  description: When true, update every matching mapping-derived defect row in the org.
+                alsoUpdateMapping:
+                  type: boolean
+                  default: false
+                  description: When true, also bump defect_priority_mappings to a new active version with this tuple's priority changed.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - transactionId
+                properties:
+                  data:
+                    type: object
+                    required:
+                    - defectsUpdated
+                    - assetsRecomputed
+                    - sitesRecomputed
+                    properties:
+                      defectsUpdated:
+                        type: integer
+                      assetsRecomputed:
+                        type: integer
+                      sitesRecomputed:
+                        type: integer
+                      mappingVersion:
+                        type: integer
+                        description: Present only when alsoUpdateMapping=true.
+                      mappingId:
+                        type: string
+                        format: uuid
+                        description: Present only when alsoUpdateMapping=true.
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: alsoUpdateMapping=true but the active mapping has no entry for (assetType, defectName).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /defect-priority-mapping:
+    get:
+      tags:
+      - Assets
+      operationId: getDefectPriorityMapping
+      summary: Get the active defect priority mapping for the caller's organization
+      description: 'Returns the active row from `app.defect_priority_mappings` (a
+
+        per-org JSONB schema mapping `(Equipment, Type, Defect)` to
+
+        `(asset_type, priority)`). 404 when none exists; the org must be
+
+        seeded via the admin API before customer-facing edits are allowed.
+
+
+        Permission: `defects:read`.
+
+        '
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DefectPriorityMapping'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags:
+      - Assets
+      operationId: putDefectPriorityMapping
+      summary: Replace the active defect priority mapping (priority values only)
+      description: 'Versioned write: deactivates the prior active row and inserts a
+
+        new one with `version+1`. Customer-facing edits are LIMITED TO
+
+        priority values: the `(Equipment, Type, Defect)` keyset is
+
+        immutable from this endpoint. Adding or removing keys requires a
+
+        super-admin re-import via the admin API after the CVAT project
+
+        schema is updated -- 409 with `code=''schema_keys_immutable''`
+
+        when the request would change the keyset.
+
+
+        Optional `applyToExisting` (default false) bulk-rewrites every
+
+        existing defect row whose `(asset_type, defect_name)`
+
+        tuple has a changed priority value, while preserving rows
+
+        marked `priority_source=''manual''`.
+
+
+        Permission: `defects:write`.
+
+        '
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - mapping
+              properties:
+                mapping:
+                  type: object
+                  description: 'Three-level Equipment / Type / Defect JSONB. See
+
+                    voltair-admin-api/src/service/defect_priority_mapping.go::validateMappingShape
+
+                    for the canonical shape; it is enforced server-side.
+
+                    '
+                applyToExisting:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - transactionId
+                properties:
+                  data:
+                    type: object
+                    required:
+                    - id
+                    - version
+                    - mapping
+                    - defectsUpdated
+                    - assetsRecomputed
+                    - sitesRecomputed
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      version:
+                        type: integer
+                      mapping:
+                        type: object
+                      defectsUpdated:
+                        type: integer
+                      assetsRecomputed:
+                        type: integer
+                      sitesRecomputed:
+                        type: integer
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Mapping keyset differs from the active version (or asset_type changed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  parameters:
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+  responses:
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    DefectPriorityMapping:
+      type: object
+      required:
+      - id
+      - organizationId
+      - mapping
+      - version
+      - isActive
+      description: 'Per-org JSONB rule set mapping a CVAT
+
+        `(Equipment, Type, Defect)` tuple to an `asset_type` and a
+
+        `priority` integer (1..4). One active row per organization at a
+
+        time; saving a new version deactivates the prior active row.
+
+        '
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        mapping:
+          type: object
+          description: '`{ "<Equipment>": { "<Type>": { "asset_type": "<slug>", "defects": { "<Defect>": <int 1-4> } } } }`.
+
+            Use `"n/a"` as the `<Type>` key for CVAT labels with no
+
+            real subtype.
+
+            '
+        version:
+          type: integer
+        isActive:
+          type: boolean
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type: string
+          nullable: true
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    AssetPriority:
+      type: string
+      enum:
+      - high
+      - medium
+      - low
+      - none
+    Asset:
+      type: object
+      required:
+      - id
+      - organizationId
+      - siteId
+      - name
+      - priority
+      - deletedAt
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        siteId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        priority:
+          $ref: '#/components/schemas/AssetPriority'
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+    Defect:
+      type: object
+      required:
+      - id
+      - organizationId
+      - assetId
+      - assetInspectionId
+      - assetType
+      - defectName
+      - defectPriority
+      - prioritySource
+      - workDoneAt
+      - deletedAt
+      - createdAt
+      description: 'Merged defect. One row per (assetInspectionId, defectName) at a
+
+        time. Per-CVAT-shape evidence (bbox, evidence photo, original
+
+        per-shape description) lives on DefectEvidence and is exposed via
+
+        `expand[]=evidence` (or, on listInspections,
+
+        `expand[]=asset.defects.evidence`). The `description` field on
+
+        this schema is the denormalized "longest non-empty live evidence
+
+        description" cache maintained by the CVAT export.
+
+        '
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        assetId:
+          type: string
+          format: uuid
+        assetInspectionId:
+          type: string
+          format: uuid
+        assetType:
+          type: string
+        defectName:
+          type: string
+        defectPriority:
+          type: integer
+          minimum: 1
+          maximum: 4
+          description: 1 = highest severity, 4 = none/normal
+        prioritySource:
+          type: string
+          enum:
+          - mapping
+          - manual
+          - cvat_other_defect
+          description: 'Where `defectPriority` came from. Bulk schema edits only
+
+            touch rows where `prioritySource=''mapping''` so reviewer
+
+            manual overrides survive. `cvat_other_defect` is excluded
+
+            because that priority is contractor-self-rated per shape,
+
+            not derived from the org-wide schema.
+
+            '
+        defectPriorityMappingId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Active defect_priority_mappings.id at the time defectPriority was last derived. Informational/audit; nullable on legacy rows imported before this column existed.
+        workDoneAt:
+          type: number
+          nullable: true
+          description: Unix ms timestamp marking this defect as addressed in the field. Null while unaddressed. When non-null, the defect is excluded from the asset priority rollup.
+        reviewedAt:
+          type: number
+          nullable: true
+          description: Unix ms timestamp the customer marked this defect reviewed (the 'Reviewed by' mark). Null when not reviewed. Set/cleared via PATCH /defects/{id} { reviewed }.
+        reviewedByName:
+          type: string
+          nullable: true
+          description: Display name of the actor who set the current reviewed state. Null when not reviewed; empty string for api-key actors with no user row. Resolved from reviewedByActorId; present on list/expand reads, omitted on the mutation response.
+        description:
+          type: string
+          nullable: true
+          description: Longest non-empty `description` across the parent's live DefectEvidence rows. Maintained by the CVAT export — the API and UI read this column directly rather than aggregating across evidence on every fetch.
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        evidence:
+          type: array
+          description: Populated only when `evidence` is requested via expand[]. Otherwise omitted.
+          items:
+            $ref: '#/components/schemas/DefectEvidence'
+    DefectEvidence:
+      type: object
+      required:
+      - id
+      - defectId
+      - reviewUncertain
+      - deletedAt
+      - createdAt
+      description: 'Per-CVAT-shape evidence row tied to a Defect (merged defect).
+
+        Multiple rows for the same Defect mean the same defect was
+
+        annotated across multiple photos. Returned from the API only when
+
+        explicitly expanded.
+
+        '
+      properties:
+        id:
+          type: string
+          format: uuid
+        defectId:
+          type: string
+          format: uuid
+        cvatShapeUid:
+          type: string
+          nullable: true
+          description: Stable id `<cvat_task_id>:<cvat_shape_id>` of the source CVAT shape. NULL on non-CVAT-sourced rows (none today).
+        evidenceMediaId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Original (uncropped) mission_media row that the lineman annotated.
+        bbox:
+          type: object
+          nullable: true
+          description: 'Bounding box in evidence_media_id pixel coordinates: {"x1": int, "y1": int, "x2": int, "y2": int}.'
+        description:
+          type: string
+          nullable: true
+          description: Free-form text the lineman attached to this specific CVAT shape (Comment attribute on regular labels, Description on the Other catch-all).
+        reviewUncertain:
+          type: boolean
+          description: True when this shipped evidence crop came from QA consensus=agreed_uncertain. The customer platform rolls this up to an Uncertain tag on the merged defect.
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Cognito JWT access token
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Organization-scoped API key

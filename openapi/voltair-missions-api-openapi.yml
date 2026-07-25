@@ -1,0 +1,713 @@
+openapi: 3.0.3
+info:
+  title: Voltair ApiKeys Missions API
+  version: 0.1.0
+  description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
+
+    All timestamp fields on this API (createdAt, updatedAt, scheduledFor, capturedAt, expiresAt, deletedAt, etc.) are Unix timestamps in milliseconds since the epoch (UTC). Both request and response bodies use this representation.'
+servers:
+- url: /
+security:
+- BearerAuth: []
+- ApiKeyAuth: []
+tags:
+- name: Missions
+paths:
+  /missions:
+    get:
+      tags:
+      - Missions
+      operationId: listMissions
+      summary: List missions
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+        description: Comma-separated statuses
+      - name: siteGeometries
+        in: query
+        schema:
+          type: string
+        description: Comma-separated geometry type filter (point, line, area)
+      - name: scheduledAfter
+        in: query
+        schema:
+          type: number
+        description: Unix timestamp (ms) lower bound on scheduledFor
+      - name: scheduledBefore
+        in: query
+        schema:
+          type: number
+        description: Unix timestamp (ms) upper bound on scheduledFor
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Mission'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags:
+      - Missions
+      operationId: createMission
+      summary: Create mission
+      description: Creates a mission. Body may include siteIds and/or clusterIds. When a cluster ID is provided, all sites in that cluster are included. The server expands cluster IDs into individual sites, creating a SiteVisit for every site and a ClusterVisit for each fully-covered cluster.
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMissionRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - transactionId
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /missions/{missionId}:
+    parameters:
+    - name: missionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Missions
+      operationId: getMission
+      summary: Get mission
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags:
+      - Missions
+      operationId: updateMission
+      summary: Update mission
+      description: Updates a mission. Cannot edit id or organizationId.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMissionRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - transactionId
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags:
+      - Missions
+      operationId: deleteMission
+      summary: Delete mission
+      description: Soft-deletes the mission. SiteVisits and ClusterVisits are untouched, hidden by RLS/query filtering on the mission's deletedAt.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - transactionId
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /missions/{missionId}/sites:
+    parameters:
+    - name: missionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Missions
+      operationId: addMissionSites
+      summary: Add sites to mission
+      description: Adds sites to an existing mission. The server expands cluster IDs into individual sites, creates SiteVisit rows for each new site, and creates or updates ClusterVisit records. Sites already in the mission are ignored.
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MissionSitesRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - transactionId
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags:
+      - Missions
+      operationId: removeMissionSites
+      summary: Remove sites from mission
+      description: Removes sites from an existing mission. Soft-deletes the corresponding SiteVisit rows and adjusts ClusterVisit counts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MissionSitesRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - transactionId
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  schemas:
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type: string
+          nullable: true
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    Mission:
+      type: object
+      required:
+      - id
+      - organizationId
+      - name
+      - description
+      - status
+      - detailLevel
+      - sensors
+      - createdAt
+      - scheduledFor
+      - estimatedCompletionTime
+      - estimatedCost
+      - siteCount
+      - deletedAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MissionStatus'
+        detailLevel:
+          $ref: '#/components/schemas/DetailLevel'
+        sensors:
+          $ref: '#/components/schemas/SensorRequirements'
+        createdAt:
+          type: number
+        scheduledFor:
+          type: number
+        estimatedCompletionTime:
+          type: number
+        dueDate:
+          type: number
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        estimatedCost:
+          type: number
+        siteGeometries:
+          type: array
+          items:
+            type: string
+            enum:
+            - point
+            - line
+            - area
+        siteCount:
+          type: integer
+          description: Total number of active site visits in this mission
+        bounds:
+          type: array
+          description: 'Bounding box of all active site geometries in this mission,
+
+            as [minLng, minLat, maxLng, maxLat]. Null when the mission has
+
+            no active site visits.
+
+            '
+          items:
+            type: number
+          minItems: 4
+          maxItems: 4
+          nullable: true
+        deletedAt:
+          type: number
+          nullable: true
+        updatedAt:
+          type: number
+    CreateMissionRequest:
+      type: object
+      required:
+      - name
+      - description
+      - status
+      - detailLevel
+      - sensors
+      - scheduledFor
+      - estimatedCompletionTime
+      - estimatedCost
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MissionStatus'
+        detailLevel:
+          $ref: '#/components/schemas/DetailLevel'
+        sensors:
+          $ref: '#/components/schemas/SensorRequirements'
+        scheduledFor:
+          type: number
+          description: Unix timestamp in milliseconds
+        estimatedCompletionTime:
+          type: number
+          description: Unix timestamp in milliseconds
+        dueDate:
+          type: number
+          description: Unix timestamp in milliseconds
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        estimatedCost:
+          type: number
+        siteGeometries:
+          type: array
+          items:
+            type: string
+            enum:
+            - point
+            - line
+            - area
+        siteIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Individual site IDs to include in the mission
+        clusterIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Cluster IDs; all sites in these clusters will be included
+    ThermalRequirement:
+      type: string
+      enum:
+      - 640x480
+      - any
+      - 'no'
+    LidarRequirement:
+      type: string
+      enum:
+      - 'yes'
+      - 'no'
+      - any
+    MissionStatus:
+      type: string
+      enum:
+      - scheduled
+      - canceled
+      - in-progress
+      - recurring
+      - complete
+    UpdateMissionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MissionStatus'
+        detailLevel:
+          $ref: '#/components/schemas/DetailLevel'
+        sensors:
+          $ref: '#/components/schemas/SensorRequirements'
+        scheduledFor:
+          type: number
+        estimatedCompletionTime:
+          type: number
+        dueDate:
+          type: number
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        estimatedCost:
+          type: number
+        siteGeometries:
+          type: array
+          items:
+            type: string
+            enum:
+            - point
+            - line
+            - area
+    Recurrence:
+      type: string
+      enum:
+      - daily
+      - weekly
+      - monthly
+      - yearly
+    MissionSitesRequest:
+      type: object
+      properties:
+        siteIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        clusterIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    DetailLevel:
+      type: string
+      enum:
+      - low
+      - medium
+      - high
+    SensorRequirements:
+      type: object
+      required:
+      - camera
+      - lidar
+      - thermal
+      properties:
+        camera:
+          $ref: '#/components/schemas/SensorRequirement'
+        lidar:
+          $ref: '#/components/schemas/LidarRequirement'
+        thermal:
+          $ref: '#/components/schemas/ThermalRequirement'
+    SensorRequirement:
+      type: string
+      enum:
+      - hi-def
+      - any
+      - 'no'
+  responses:
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict (duplicate resource, in-use resource, or undo conflict)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  parameters:
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Cognito JWT access token
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Organization-scoped API key

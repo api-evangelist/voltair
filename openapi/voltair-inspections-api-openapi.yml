@@ -1,0 +1,539 @@
+openapi: 3.0.3
+info:
+  title: Voltair ApiKeys Inspections API
+  version: 0.1.0
+  description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
+
+    All timestamp fields on this API (createdAt, updatedAt, scheduledFor, capturedAt, expiresAt, deletedAt, etc.) are Unix timestamps in milliseconds since the epoch (UTC). Both request and response bodies use this representation.'
+servers:
+- url: /
+security:
+- BearerAuth: []
+- ApiKeyAuth: []
+tags:
+- name: Inspections
+paths:
+  /inspections:
+    get:
+      tags:
+      - Inspections
+      operationId: listInspections
+      summary: List site inspections
+      description: Returns SiteInspection records for the caller's organization. All filter parameters are optional; row-level security confines results to the caller's organization.
+      parameters:
+      - name: siteId
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Restrict to inspections for a single site.
+      - name: missionId
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Restrict to inspections for a single mission.
+      - name: assetId
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Restrict to inspections that contain at least one asset inspection for this asset.
+      - name: hasComments
+        in: query
+        schema:
+          type: boolean
+        description: When `true`, restrict to inspections that have at least one comment on any associated media (site-level via `site_inspection_media`, or asset-level via the site's `asset_inspections`). Any other value is treated as absent.
+      - name: siteName
+        in: query
+        schema:
+          type: string
+        description: Case-insensitive substring match (ILIKE) on the joined site's `name`. Pass plain text; the server wraps it with `%` on both sides.
+      - name: siteType[]
+        in: query
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - distribution_pole
+            - transmission_pole
+            - substation
+            - transmission_line
+            - distribution_line
+            - pipeline
+            - railway
+            - road
+            - other
+        description: Repeating allowlist on the joined site's `site_type`. Empty/absent means any.
+      - name: geometryType[]
+        in: query
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - Point
+            - LineString
+            - Polygon
+        description: Repeating GeoJSON geometry-type allowlist on the joined site's geometry (mapped to `ST_GeometryType` internally). Empty/absent means any.
+      - name: priority[]
+        in: query
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - high
+            - medium
+            - low
+            - none
+        description: Repeating allowlist on the denormalized `sites.priority` column (`none` also matches a NULL priority). Empty/absent means any.
+      - name: resolution[]
+        in: query
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - all_resolved
+            - some_resolved
+            - none_resolved
+        description: 'Repeating allowlist bucketing each site inspection by its defects'' `workDoneAt` flags: `all_resolved` (every defect resolved), `some_resolved` (a mix), `none_resolved` (at least one defect, none resolved). Site inspections with zero defects match no bucket and are excluded when this filter is active.'
+      - name: review[]
+        in: query
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - all_reviewed
+            - some_reviewed
+            - none_reviewed
+        description: 'Repeating allowlist bucketing each site inspection by its defects'' `reviewedAt` flags: `all_reviewed` (every defect reviewed), `some_reviewed` (a mix), `none_reviewed` (at least one defect, none reviewed). Site inspections with zero defects match no bucket and are excluded when this filter is active.'
+      - name: includeUncapturable
+        in: query
+        schema:
+          type: boolean
+        description: 'When `true`, additionally returns synthesized placeholder SiteInspection rows for mission sites tagged `inaccessible` that have no persisted inspection (no media was captured). Requires `missionId`; sending it without `missionId` is a `400`. Placeholder rows carry `not_capturable: true`, reuse the site''s id, and expand a `site` whose `tags` include `inaccessible`. They pass through the same filters and pagination as real rows.'
+      - $ref: '#/components/parameters/MediaSourceFilter'
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SiteInspection'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /inspections/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Inspections
+      operationId: getInspection
+      summary: Get a site inspection by id
+      parameters:
+      - $ref: '#/components/parameters/MediaSourceFilter'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SiteInspection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /asset-inspections:
+    get:
+      tags:
+      - Inspections
+      operationId: listAssetInspections
+      summary: List asset inspections
+      description: Returns AssetInspection records for the caller's organization. All filters are optional; row-level security confines results to the caller's organization.
+      parameters:
+      - name: siteInspectionId
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Restrict to asset inspections within a single site inspection.
+      - name: missionId
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Restrict to asset inspections for a single mission.
+      - name: siteId
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Restrict to asset inspections whose parent site inspection belongs to this site.
+      - name: assetId
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Restrict to asset inspections for a single asset.
+      - $ref: '#/components/parameters/MediaSourceFilter'
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AssetInspection'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /asset-inspections/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Inspections
+      operationId: getAssetInspection
+      summary: Get an asset inspection by id
+      parameters:
+      - $ref: '#/components/parameters/MediaSourceFilter'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AssetInspection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  responses:
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type: string
+          nullable: true
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    AssetInspection:
+      type: object
+      required:
+      - id
+      - organizationId
+      - assetId
+      - missionId
+      - siteInspectionId
+      - deletedAt
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        assetId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        siteInspectionId:
+          type: string
+          format: uuid
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+    SiteInspection:
+      type: object
+      required:
+      - id
+      - organizationId
+      - siteId
+      - missionId
+      - status
+      - deletedAt
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        siteId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - planned
+          - capture-pending
+          - capture-submitted
+          - capture-verified
+          - capture-failed
+          - analysis-pending
+          - analysis-submitted
+          - analysis-verified
+          - analysis-failed
+          - delivered
+          description: FSM lifecycle state of this inspection (see the inspections consolidation state machine). Defaults to `planned`. Not yet transitioned by writers in this release.
+        status_metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Failure details, legacy provenance, or not-capturable kind; null unless set.
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        not_capturable:
+          type: boolean
+          description: True only for synthesized "not capturable" placeholder rows returned when `includeUncapturable=true` (the site is tagged `inaccessible` and no media was captured); these have no backing site_inspections row (the id reuses the site id, so do not refetch via GET /inspections/{id}). Absent/false for real inspections.
+  parameters:
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
+    MediaSourceFilter:
+      name: mediaSource[]
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - drone
+          - screenshot
+          - upload
+          - contractor
+          - cvat_crop
+      description: Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint.
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Cognito JWT access token
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Organization-scoped API key
