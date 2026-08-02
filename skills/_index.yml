@@ -1,0 +1,16 @@
+generated: '2026-07-21'
+method: generated
+source: openapi/voltair-api-openapi-original.yml
+skills:
+  - file: voltair-plan-inspection-mission.md
+    name: Plan and schedule a Voltair inspection mission
+    api: openapi/voltair-api-openapi-original.yml
+    operations: [getOrganization, createSite, bulkCreateSites, createMission, addMissionSites, getMission, listSiteVisits, createWebhook]
+  - file: voltair-retrieve-inspection-results.md
+    name: Retrieve Voltair inspection results, defects, and media
+    api: openapi/voltair-api-openapi-original.yml
+    operations: [listInspections, listAssetInspections, listDefects, updateDefect, bulkUpdateDefectPriority, listMedia, getMedia, createMediaDownloadUrl, downloadMissionMediaZip, downloadDefectEvidence]
+  - file: voltair-manage-webhooks-and-keys.md
+    name: Operate Voltair webhooks and API keys safely
+    api: openapi/voltair-api-openapi-original.yml
+    operations: [createApiKey, listApiKeys, deleteApiKey, createWebhook, testWebhook, listWebhookDeliveries, rotateWebhookSecret, listEvents, listTransactions, undoTransaction]

@@ -1,0 +1,64 @@
+generated: '2026-07-21'
+method: derived
+source: >-
+  Derived from openapi/voltair-api-openapi-original.yml — schema id-reference
+  fields (organizationId, siteId, missionId, ...) and $ref links. Every
+  resource is scoped to an Organization via organizationId (omitted below as a
+  universal belongs_to except where it is the only relationship).
+docs: https://api.voltairlabs.com/docs
+notation: >-
+  relationships use has_one / has_many / belongs_to with the foreign-key field
+  name; direction is from the entity that owns the reference.
+
+entities:
+  - {name: Organization, domain: identity, description: The tenant; all endpoints are scoped to the authenticated organization.}
+  - {name: User, domain: identity, description: A member of the organization (Cognito-backed), with role and invitation lifecycle.}
+  - {name: Role, domain: identity, description: A permission set (resource + level) assignable to users; system roles included.}
+  - {name: ApiKey, domain: identity, description: Organization-scoped API key actor; raw key shown once, 12-char display prefix.}
+  - {name: Site, domain: assets, description: An inspectable location (point/area/line) with GeoJSON geometry, tags, and priority.}
+  - {name: Asset, domain: assets, description: A physical asset at a site (e.g. utility structure component).}
+  - {name: Cluster, domain: assets, description: A hierarchical spatial grouping of sites (parentId levels, centroid/bounds).}
+  - {name: Defect, domain: inspections, description: A finding on an asset from an inspection, with priority, review state, and evidence.}
+  - {name: DefectEvidence, domain: inspections, description: Media-backed evidence (bbox annotation) supporting a defect.}
+  - {name: DefectPriorityMapping, domain: inspections, description: Org mapping from defect type to priority.}
+  - {name: Mission, domain: operations, description: A scheduled/recurring drone data-capture run over selected sites with sensor requirements (RGB/thermal/LiDAR).}
+  - {name: ClusterVisit, domain: operations, description: Progress of a mission over one cluster (siteCount/completedCount/status).}
+  - {name: SiteVisit, domain: operations, description: A mission's capture at a single site, with recapture workflow.}
+  - {name: MissionMedia, domain: media, description: Captured media (image/video) with capture device, orientation, geo location/path, thermal range.}
+  - {name: MediaComment, domain: media, description: A comment thread entry on a media item.}
+  - {name: SiteInspection, domain: inspections, description: Inspection outcome for a site within a mission.}
+  - {name: AssetInspection, domain: inspections, description: Inspection outcome for one asset within a site inspection.}
+  - {name: Event, domain: platform, description: Audit-log entry (actor, action, before/after deltas) per resource.}
+  - {name: Transaction, domain: platform, description: Record of a mutating API call (idempotencyKey), reversible via undo.}
+  - {name: Webhook, domain: platform, description: Outbound event subscription with HMAC-SHA256 signing secret.}
+  - {name: WebhookDelivery, domain: platform, description: Delivery attempt log for a webhook (statusCode, responseTimeMs, error).}
+
+relationships:
+  - {from: Role, to: Organization, kind: belongs_to, via: organizationId}
+  - {from: Site, to: Organization, kind: belongs_to, via: organizationId}
+  - {from: Site, to: Cluster, kind: belongs_to, via: clusterId}
+  - {from: Asset, to: Site, kind: belongs_to, via: siteId}
+  - {from: Cluster, to: Cluster, kind: belongs_to, via: parentId}
+  - {from: Defect, to: Asset, kind: belongs_to, via: assetId}
+  - {from: Defect, to: AssetInspection, kind: belongs_to, via: assetInspectionId}
+  - {from: Defect, to: DefectPriorityMapping, kind: belongs_to, via: defectPriorityMappingId}
+  - {from: Defect, to: DefectEvidence, kind: has_many, via: defectId}
+  - {from: DefectEvidence, to: MissionMedia, kind: belongs_to, via: evidenceMediaId}
+  - {from: Mission, to: Site, kind: has_many, via: "missions/{missionId}/sites join endpoints"}
+  - {from: ClusterVisit, to: Mission, kind: belongs_to, via: missionId}
+  - {from: ClusterVisit, to: Cluster, kind: belongs_to, via: clusterId}
+  - {from: SiteVisit, to: Mission, kind: belongs_to, via: missionId}
+  - {from: SiteVisit, to: Site, kind: belongs_to, via: siteId}
+  - {from: SiteVisit, to: ClusterVisit, kind: belongs_to, via: clusterVisitId}
+  - {from: MissionMedia, to: Mission, kind: belongs_to, via: missionId}
+  - {from: MissionMedia, to: Site, kind: belongs_to, via: siteId}
+  - {from: MissionMedia, to: MediaComment, kind: has_many, via: mediaId}
+  - {from: SiteInspection, to: Site, kind: belongs_to, via: siteId}
+  - {from: SiteInspection, to: Mission, kind: belongs_to, via: missionId}
+  - {from: AssetInspection, to: Asset, kind: belongs_to, via: assetId}
+  - {from: AssetInspection, to: Mission, kind: belongs_to, via: missionId}
+  - {from: AssetInspection, to: SiteInspection, kind: belongs_to, via: siteInspectionId}
+  - {from: Event, to: Organization, kind: belongs_to, via: organizationId}
+  - {from: Transaction, to: Transaction, kind: has_one, via: undoneByTransactionId}
+  - {from: Webhook, to: WebhookDelivery, kind: has_many, via: webhookId}
+  - {from: User, to: Role, kind: belongs_to, via: roleId}

@@ -1,0 +1,32 @@
+generated: '2026-07-21'
+method: derived
+source: openapi/voltair-api-openapi-original.yml
+description: >-
+  Lifecycle posture derived from the published Voltair OpenAPI and site probes
+  on 2026-07-21. Voltair is an early-stage provider (YC W26): no public
+  versioning policy, deprecation policy, SLA, or status page is published yet.
+  Recorded honestly so re-runs can upgrade when these appear.
+versioning:
+  scheme: none-published
+  current: 0.1.0
+  notes: >-
+    info.version is 0.1.0; paths are unversioned (no /v1 prefix) and no
+    versioning policy is documented.
+deprecation:
+  policy_url: null
+  sunset_header: false
+  notes: No deprecation policy published; no Sunset/Deprecation headers in the spec.
+sla:
+  url: null
+status_page: null
+status_page_notes: status.voltairlabs.com does not resolve; no status page found.
+health_endpoint:
+  url: https://api.voltairlabs.com/health
+  probed: '2026-07-21'
+  response: '{"status":"ok"}'
+deprecated_operations: []
+undo_support:
+  notes: >-
+    The API exposes a transaction log with undo — every mutating call creates a
+    Transaction (with idempotencyKey, undoOfTransactionId, undoneByTransactionId)
+    and POST /transactions/{transactionId}/undo reverses it.

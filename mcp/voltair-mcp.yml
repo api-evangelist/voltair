@@ -1,0 +1,240 @@
+generated: '2026-07-21'
+method: derived
+status: candidate
+source: openapi/voltair-api-openapi-original.yml
+description: No official Voltair MCP server was found (no public MCP docs, npm packages, or registry entries
+  as of 2026-07-21). This is a candidate tool surface derived from the published OpenAPI at https://api.voltairlabs.com/openapi.yaml
+  — one tool per operationId.
+server:
+  name: voltair
+  transport: http
+  url: null
+tools:
+- name: get_organization
+  description: Get organization
+  source_operation: openapi/voltair-api-openapi-original.yml#getOrganization
+- name: update_organization
+  description: Update organization
+  source_operation: openapi/voltair-api-openapi-original.yml#updateOrganization
+- name: get_me
+  description: Get authenticated caller
+  source_operation: openapi/voltair-api-openapi-original.yml#getMe
+- name: list_roles
+  description: List roles
+  source_operation: openapi/voltair-api-openapi-original.yml#listRoles
+- name: create_role
+  description: Create role
+  source_operation: openapi/voltair-api-openapi-original.yml#createRole
+- name: get_role
+  description: Get role
+  source_operation: openapi/voltair-api-openapi-original.yml#getRole
+- name: update_role
+  description: Update role
+  source_operation: openapi/voltair-api-openapi-original.yml#updateRole
+- name: delete_role
+  description: Delete role
+  source_operation: openapi/voltair-api-openapi-original.yml#deleteRole
+- name: list_users
+  description: List users
+  source_operation: openapi/voltair-api-openapi-original.yml#listUsers
+- name: create_user
+  description: Invite user
+  source_operation: openapi/voltair-api-openapi-original.yml#createUser
+- name: get_user
+  description: Get user
+  source_operation: openapi/voltair-api-openapi-original.yml#getUser
+- name: update_user
+  description: Update user
+  source_operation: openapi/voltair-api-openapi-original.yml#updateUser
+- name: delete_user
+  description: Delete user
+  source_operation: openapi/voltair-api-openapi-original.yml#deleteUser
+- name: deactivate_user
+  description: Deactivate user
+  source_operation: openapi/voltair-api-openapi-original.yml#deactivateUser
+- name: reactivate_user
+  description: Reactivate user
+  source_operation: openapi/voltair-api-openapi-original.yml#reactivateUser
+- name: resend_invitation
+  description: Resend invitation
+  source_operation: openapi/voltair-api-openapi-original.yml#resendInvitation
+- name: list_sites
+  description: List sites
+  source_operation: openapi/voltair-api-openapi-original.yml#listSites
+- name: create_site
+  description: Create site
+  source_operation: openapi/voltair-api-openapi-original.yml#createSite
+- name: bulk_create_sites
+  description: Bulk create sites
+  source_operation: openapi/voltair-api-openapi-original.yml#bulkCreateSites
+- name: bulk_delete_sites
+  description: Bulk delete sites
+  source_operation: openapi/voltair-api-openapi-original.yml#bulkDeleteSites
+- name: get_site
+  description: Get site
+  source_operation: openapi/voltair-api-openapi-original.yml#getSite
+- name: update_site
+  description: Update site
+  source_operation: openapi/voltair-api-openapi-original.yml#updateSite
+- name: delete_site
+  description: Delete site
+  source_operation: openapi/voltair-api-openapi-original.yml#deleteSite
+- name: list_assets
+  description: List assets
+  source_operation: openapi/voltair-api-openapi-original.yml#listAssets
+- name: get_asset
+  description: Get asset
+  source_operation: openapi/voltair-api-openapi-original.yml#getAsset
+- name: list_defects
+  description: List defects for an asset
+  source_operation: openapi/voltair-api-openapi-original.yml#listDefects
+- name: update_defect
+  description: Update a defect
+  source_operation: openapi/voltair-api-openapi-original.yml#updateDefect
+- name: bulk_update_defect_priority
+  description: Bulk-update defect priority for a single (assetType, defectName) tuple
+  source_operation: openapi/voltair-api-openapi-original.yml#bulkUpdateDefectPriority
+- name: get_defect_priority_mapping
+  description: Get the active defect priority mapping for the caller's organization
+  source_operation: openapi/voltair-api-openapi-original.yml#getDefectPriorityMapping
+- name: put_defect_priority_mapping
+  description: Replace the active defect priority mapping (priority values only)
+  source_operation: openapi/voltair-api-openapi-original.yml#putDefectPriorityMapping
+- name: list_clusters
+  description: List clusters
+  source_operation: openapi/voltair-api-openapi-original.yml#listClusters
+- name: create_cluster
+  description: Create cluster
+  source_operation: openapi/voltair-api-openapi-original.yml#createCluster
+- name: bulk_create_clusters
+  description: Bulk create clusters
+  source_operation: openapi/voltair-api-openapi-original.yml#bulkCreateClusters
+- name: get_cluster
+  description: Get cluster
+  source_operation: openapi/voltair-api-openapi-original.yml#getCluster
+- name: update_cluster
+  description: Update cluster
+  source_operation: openapi/voltair-api-openapi-original.yml#updateCluster
+- name: delete_cluster
+  description: Delete cluster
+  source_operation: openapi/voltair-api-openapi-original.yml#deleteCluster
+- name: list_missions
+  description: List missions
+  source_operation: openapi/voltair-api-openapi-original.yml#listMissions
+- name: create_mission
+  description: Create mission
+  source_operation: openapi/voltair-api-openapi-original.yml#createMission
+- name: get_mission
+  description: Get mission
+  source_operation: openapi/voltair-api-openapi-original.yml#getMission
+- name: update_mission
+  description: Update mission
+  source_operation: openapi/voltair-api-openapi-original.yml#updateMission
+- name: delete_mission
+  description: Delete mission
+  source_operation: openapi/voltair-api-openapi-original.yml#deleteMission
+- name: add_mission_sites
+  description: Add sites to mission
+  source_operation: openapi/voltair-api-openapi-original.yml#addMissionSites
+- name: remove_mission_sites
+  description: Remove sites from mission
+  source_operation: openapi/voltair-api-openapi-original.yml#removeMissionSites
+- name: list_cluster_visits
+  description: List cluster visits for a mission
+  source_operation: openapi/voltair-api-openapi-original.yml#listClusterVisits
+- name: get_cluster_visit
+  description: Get cluster visit
+  source_operation: openapi/voltair-api-openapi-original.yml#getClusterVisit
+- name: list_site_visits
+  description: List site visits for a mission
+  source_operation: openapi/voltair-api-openapi-original.yml#listSiteVisits
+- name: get_site_visit
+  description: Get site visit
+  source_operation: openapi/voltair-api-openapi-original.yml#getSiteVisit
+- name: list_media
+  description: List media for a mission
+  source_operation: openapi/voltair-api-openapi-original.yml#listMedia
+- name: create_media
+  description: Create a media row
+  source_operation: openapi/voltair-api-openapi-original.yml#createMedia
+- name: create_media_download_url
+  description: Issue a signed URL for the mission-zip download
+  source_operation: openapi/voltair-api-openapi-original.yml#createMediaDownloadUrl
+- name: download_mission_media_zip
+  description: Download all (optionally filtered) mission media as a streaming zip
+  source_operation: openapi/voltair-api-openapi-original.yml#downloadMissionMediaZip
+- name: download_mission_media_single
+  description: Download a single media object
+  source_operation: openapi/voltair-api-openapi-original.yml#downloadMissionMediaSingle
+- name: download_defect_evidence
+  description: Download the annotated evidence crop for a defect_evidence row
+  source_operation: openapi/voltair-api-openapi-original.yml#downloadDefectEvidence
+- name: get_media
+  description: Get media item
+  source_operation: openapi/voltair-api-openapi-original.yml#getMedia
+- name: list_media_comments
+  description: List comments on a media item
+  source_operation: openapi/voltair-api-openapi-original.yml#listMediaComments
+- name: create_media_comment
+  description: Add comment to media
+  source_operation: openapi/voltair-api-openapi-original.yml#createMediaComment
+- name: list_inspections
+  description: List site inspections
+  source_operation: openapi/voltair-api-openapi-original.yml#listInspections
+- name: get_inspection
+  description: Get a site inspection by id
+  source_operation: openapi/voltair-api-openapi-original.yml#getInspection
+- name: list_asset_inspections
+  description: List asset inspections
+  source_operation: openapi/voltair-api-openapi-original.yml#listAssetInspections
+- name: get_asset_inspection
+  description: Get an asset inspection by id
+  source_operation: openapi/voltair-api-openapi-original.yml#getAssetInspection
+- name: list_events
+  description: List events
+  source_operation: openapi/voltair-api-openapi-original.yml#listEvents
+- name: get_event
+  description: Get event
+  source_operation: openapi/voltair-api-openapi-original.yml#getEvent
+- name: list_transactions
+  description: List transactions
+  source_operation: openapi/voltair-api-openapi-original.yml#listTransactions
+- name: get_transaction
+  description: Get transaction
+  source_operation: openapi/voltair-api-openapi-original.yml#getTransaction
+- name: undo_transaction
+  description: Undo transaction
+  source_operation: openapi/voltair-api-openapi-original.yml#undoTransaction
+- name: list_api_keys
+  description: List API keys
+  source_operation: openapi/voltair-api-openapi-original.yml#listApiKeys
+- name: create_api_key
+  description: Create API key
+  source_operation: openapi/voltair-api-openapi-original.yml#createApiKey
+- name: delete_api_key
+  description: Delete API key
+  source_operation: openapi/voltair-api-openapi-original.yml#deleteApiKey
+- name: list_webhooks
+  description: List webhooks
+  source_operation: openapi/voltair-api-openapi-original.yml#listWebhooks
+- name: create_webhook
+  description: Create webhook
+  source_operation: openapi/voltair-api-openapi-original.yml#createWebhook
+- name: get_webhook
+  description: Get webhook
+  source_operation: openapi/voltair-api-openapi-original.yml#getWebhook
+- name: update_webhook
+  description: Update webhook
+  source_operation: openapi/voltair-api-openapi-original.yml#updateWebhook
+- name: delete_webhook
+  description: Delete webhook
+  source_operation: openapi/voltair-api-openapi-original.yml#deleteWebhook
+- name: rotate_webhook_secret
+  description: Rotate webhook secret
+  source_operation: openapi/voltair-api-openapi-original.yml#rotateWebhookSecret
+- name: test_webhook
+  description: Test webhook
+  source_operation: openapi/voltair-api-openapi-original.yml#testWebhook
+- name: list_webhook_deliveries
+  description: List webhook deliveries
+  source_operation: openapi/voltair-api-openapi-original.yml#listWebhookDeliveries

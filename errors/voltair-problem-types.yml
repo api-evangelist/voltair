@@ -1,0 +1,48 @@
+generated: '2026-07-21'
+method: derived
+source: openapi/voltair-api-openapi-original.yml
+format: custom-envelope
+description: >-
+  Error catalog derived from the Voltair OpenAPI components.responses. All
+  errors return a JSON envelope {error: {code, message, details}} — code is a
+  machine-readable error code, message is human-readable, details carries
+  optional structured info (e.g. field-level validation errors,
+  conflictingEventIds). Every response carries an X-Request-Id (uuid) header
+  for tracing. Not RFC 9457 (no application/problem+json).
+envelope:
+  content_type: application/json
+  shape:
+    error:
+      code: machine-readable error code (string, required)
+      message: human-readable description (string, required)
+      details: optional structured info object (e.g. field-level validation errors)
+  trace_header: X-Request-Id
+problems:
+  - status: 400
+    name: BadRequest
+    title: Bad request or validation error
+    remediation: Fix the request body/parameters; field-level validation errors appear in error.details.
+  - status: 401
+    name: Unauthorized
+    title: Missing or invalid credentials
+    remediation: Supply a valid Cognito Bearer JWT or X-API-Key header.
+  - status: 403
+    name: Forbidden
+    title: Caller lacks permission
+    remediation: The authenticated role does not include the required permission for this resource.
+  - status: 404
+    name: NotFound
+    title: Resource not found
+    remediation: Verify the resource id and that it belongs to the authenticated organization.
+  - status: 409
+    name: Conflict
+    title: Conflict with current state
+    remediation: Resolve the conflicting state; conflicting event ids may be listed in error.details.conflictingEventIds.
+  - status: 429
+    name: TooManyRequests
+    title: Rate limit exceeded
+    remediation: Back off using Retry-After; window state is in X-RateLimit-Limit/-Remaining/-Reset headers.
+  - status: 500
+    name: InternalError
+    title: Internal server error
+    remediation: Retry with backoff; include X-Request-Id when contacting Voltair (info@voltairlabs.com).

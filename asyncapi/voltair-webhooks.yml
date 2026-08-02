@@ -1,0 +1,39 @@
+generated: '2026-07-21'
+method: derived
+source: openapi/voltair-api-openapi-original.yml
+type: Webhooks
+description: >-
+  Voltair's documented webhook surface, derived from the published OpenAPI.
+  Voltair publishes no AsyncAPI document (none found on the docs host, GitHub
+  org, or /asyncapi.yaml as of 2026-07-21); this captures the real webhook
+  catalog: subscriptions are managed via the /webhooks API, payloads are
+  signed with an HMAC-SHA256 secret, and delivery attempts are queryable.
+management:
+  create: POST /webhooks (createWebhook)
+  list: GET /webhooks (listWebhooks)
+  get: GET /webhooks/{webhookId} (getWebhook)
+  update: PUT /webhooks/{webhookId} (updateWebhook)
+  delete: DELETE /webhooks/{webhookId} (deleteWebhook)
+  rotate_secret: POST /webhooks/{webhookId}/rotate-secret (rotateWebhookSecret)
+  test: POST /webhooks/{webhookId}/test (testWebhook)
+  deliveries: GET /webhooks/{webhookId}/deliveries (listWebhookDeliveries)
+security:
+  signing: HMAC-SHA256
+  secret_field: Webhook.secret
+  rotation: POST /webhooks/{webhookId}/rotate-secret
+events:
+  - name: mission.scheduled
+    description: A mission has been scheduled.
+  - name: mission.started
+    description: A mission has started flying.
+  - name: mission.completed
+    description: A mission has completed.
+  - name: mission.failed
+    description: A mission has failed.
+  - name: processing.started
+    description: Data processing for captured media has started.
+  - name: processing.completed
+    description: Data processing has completed.
+delivery_log:
+  schema: WebhookDelivery
+  fields: [id, organizationId, webhookId, event, timestamp, statusCode, responseTimeMs, error]

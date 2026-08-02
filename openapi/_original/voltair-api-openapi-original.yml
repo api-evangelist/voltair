@@ -1,0 +1,5736 @@
+openapi: 3.0.3
+info:
+  title: Voltair API
+  version: 0.1.0
+  description: >-
+    Infrastructure inspection platform API. All endpoints are scoped to the
+    authenticated organization via Bearer JWT or API key.
+
+    All timestamp fields on this API (createdAt, updatedAt, scheduledFor,
+    capturedAt, expiresAt, deletedAt, etc.) are Unix timestamps in
+    milliseconds since the epoch (UTC). Both request and response bodies use
+    this representation.
+
+servers:
+  - url: /
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+tags:
+  - name: Organization
+  - name: Roles
+  - name: Users
+  - name: Sites
+  - name: Assets
+  - name: Clusters
+  - name: Missions
+  - name: ClusterVisits
+  - name: SiteVisits
+  - name: Media
+  - name: Inspections
+  - name: Events
+  - name: Transactions
+  - name: ApiKeys
+  - name: Webhooks
+
+paths:
+  # ---------------------------------------------------------------------------
+  # Organization
+  # ---------------------------------------------------------------------------
+  /organization:
+    get:
+      tags: [Organization]
+      operationId: getOrganization
+      summary: Get organization
+      description: Returns the organization for the authenticated caller.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Organization'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Organization]
+      operationId: updateOrganization
+      summary: Update organization
+      description: Updates organization details. Cannot edit id or createdAt.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganizationRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Organization'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Identity
+  # ---------------------------------------------------------------------------
+  /me:
+    get:
+      tags: [Identity]
+      operationId: getMe
+      summary: Get authenticated caller
+      description: >-
+        Returns the user row, role row, and resolved permission list for
+        the authenticated caller, derived from the auth context's own
+        `auth_lookup_by_cognito_id`. Unlike `GET /users/{id}` and
+        `GET /roles`, this endpoint is keyed to the JWT (not to the
+        currently viewed organization), so it works for super-admins
+        whose user/role rows live in the cluster-internal org but who
+        are viewing a different tenant. Authenticated callers always
+        have permission to read their own identity, so the route is
+        not gated by a `Requires(...)` permission check.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [user, role, permissions]
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      role:
+                        $ref: '#/components/schemas/Role'
+                      permissions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Permission'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Roles
+  # ---------------------------------------------------------------------------
+  /roles:
+    get:
+      tags: [Roles]
+      operationId: listRoles
+      summary: List roles
+      description: >-
+        Returns roles for the caller's organization. By default only
+        org-scoped roles are returned. Pass `include=cluster` to also include
+        cluster-wide roles (those with `organizationId == null`, e.g.
+        super-admin and other system-actor roles); these are not assignable
+        from the org UI but downstream consumers like the auth-context role
+        lookup and the events page need them to resolve cluster-wide role
+        IDs.
+      parameters:
+        - name: include
+          in: query
+          schema:
+            type: string
+            enum: [cluster]
+          description: >-
+            Set to `cluster` to additionally include cluster-wide roles
+            (`organizationId == null`). Omit for org-scoped roles only.
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Role'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Roles]
+      operationId: createRole
+      summary: Create role
+      description: >-
+        Creates a custom role. isSystem and canSwitchOrganizations are always
+        set to false server-side.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoleRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Role'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /roles/{roleId}:
+    parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Roles]
+      operationId: getRole
+      summary: Get role
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Role'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Roles]
+      operationId: updateRole
+      summary: Update role
+      description: >-
+        Updates a custom role. Returns 403 if the role is a system role.
+        Cannot edit id, isSystem, or canSwitchOrganizations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoleRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Role'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Roles]
+      operationId: deleteRole
+      summary: Delete role
+      description: >-
+        Soft-deletes a custom role. Returns 403 if the role is a system role.
+        Returns 409 if any active actors are currently assigned this role.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Role'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Users
+  # ---------------------------------------------------------------------------
+  /users:
+    get:
+      tags: [Users]
+      operationId: listUsers
+      summary: List users
+      description: >-
+        Returns users for the caller's organization. Users assigned to a
+        cluster-wide role (`role.organizationId == null`, e.g. super-admins)
+        are excluded; they belong to no single org's user catalog and the
+        org-scoped Users tab does not display them.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Comma-separated statuses (active, invited, deactivated)
+        - name: roleId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Users]
+      operationId: createUser
+      summary: Invite user
+      description: >-
+        Invites a new user. Sets status to "invited" and triggers an invitation
+        email. Creates an actor record server-side.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Users]
+      operationId: getUser
+      summary: Get user
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Users]
+      operationId: updateUser
+      summary: Update user
+      description: >-
+        Updates user profile or role assignment. Cannot edit id, actorId,
+        cognitoId, or email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Users]
+      operationId: deleteUser
+      summary: Delete user
+      description: >-
+        Soft-deletes a user. The user's actor record persists for audit trail
+        integrity. Returns 409 if the user has active API keys.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{userId}/deactivate:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      tags: [Users]
+      operationId: deactivateUser
+      summary: Deactivate user
+      description: Sets user status to "deactivated".
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{userId}/reactivate:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      tags: [Users]
+      operationId: reactivateUser
+      summary: Reactivate user
+      description: Sets a deactivated user's status to "active".
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{userId}/resend-invitation:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [Users]
+      operationId: resendInvitation
+      summary: Resend invitation
+      description: |
+        Generates a fresh Cognito temporary password, resets the Cognito user
+        back to FORCE_CHANGE_PASSWORD state, and re-sends the invitation email.
+        Only valid while the user's status is "invited" — returns 409 Conflict
+        once they have accepted the original invitation.
+      responses:
+        '204':
+          description: Invitation re-sent
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Sites
+  # ---------------------------------------------------------------------------
+  /sites:
+    get:
+      tags: [Sites]
+      operationId: listSites
+      summary: List sites
+      parameters:
+        - name: clusterId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: unclustered
+          in: query
+          schema:
+            type: boolean
+          description: If true, return only sites with no cluster assignment. Cannot be combined with clusterId.
+        - name: externalId
+          in: query
+          schema:
+            type: string
+          description: Filter by customer-facing external identifier
+        - name: tags
+          in: query
+          schema:
+            type: string
+          description: Comma-separated tag values
+        - name: priority
+          in: query
+          schema:
+            type: string
+          description: Comma-separated priorities (high, medium, low, none)
+        - name: siteType
+          in: query
+          schema:
+            type: string
+          description: Comma-separated site types (e.g. substation,distribution_pole)
+        - name: geometryType
+          in: query
+          schema:
+            type: string
+            enum: [Point, LineString, Polygon, MultiLineString, MultiPolygon]
+          description: Filter by the GeoJSON geometry type of the site
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Case-insensitive substring match against name, externalId, and description
+        - name: bounds
+          in: query
+          schema:
+            type: string
+          description: "Bounding box: minLng,minLat,maxLng,maxLat"
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Site'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Sites]
+      operationId: createSite
+      summary: Create site
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSiteRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Site'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /sites/bulk:
+    post:
+      tags: [Sites]
+      operationId: bulkCreateSites
+      summary: Bulk create sites
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sites]
+              properties:
+                sites:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateSiteRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Site'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Sites]
+      operationId: bulkDeleteSites
+      summary: Bulk delete sites
+      description: |-
+        Soft-deletes an array of sites by ID. The `ids` array must be
+        non-empty and at most 10000 entries; callers that need to delete more
+        should submit multiple requests.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  minItems: 1
+                  maxItems: 10000
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Site'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /sites/{siteId}:
+    parameters:
+      - name: siteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Sites]
+      operationId: getSite
+      summary: Get site
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Site'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Sites]
+      operationId: updateSite
+      summary: Update site
+      description: Updates a site. Cannot edit id or organizationId.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSiteRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Site'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Sites]
+      operationId: deleteSite
+      summary: Delete site
+      description: Soft-deletes a site by setting deleted_at.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Site'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Assets & Defects (nested under sites)
+  # ---------------------------------------------------------------------------
+  /assets:
+    get:
+      tags: [Assets]
+      operationId: listAssets
+      summary: List assets
+      description: |
+        Lists assets filtered by `siteId` (required). RLS confines results
+        to the caller's organization.
+      parameters:
+        - name: siteId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: priority
+          in: query
+          schema:
+            type: string
+          description: Comma-separated priorities (high, medium, low, none)
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Asset'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /assets/{assetId}:
+    parameters:
+      - name: assetId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Assets]
+      operationId: getAsset
+      summary: Get asset
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Asset'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /defects:
+    get:
+      tags: [Assets]
+      operationId: listDefects
+      summary: List defects for an asset
+      description: |
+        Lists defects filtered by `assetId` (required). RLS confines
+        results to the caller's organization.
+      parameters:
+        - name: assetId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Defect'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /defects/{defectId}:
+    parameters:
+      - name: defectId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    patch:
+      tags: [Assets]
+      operationId: updateDefect
+      summary: Update a defect
+      description: |
+        Partial update of one or more mutable fields:
+          * `workDoneAt` -- Unix ms to mark the defect as addressed,
+            null to clear the mark (undo).
+          * `defectPriority` -- 1..4. Sending this field always sets
+            `prioritySource='manual'` so a subsequent bulk schema edit
+            cannot overwrite the reviewer's decision. May be sent
+            standalone; sending `prioritySource: 'manual'` alongside
+            is allowed but redundant.
+          * `prioritySource: 'mapping'` (alone, without
+            `defectPriority`) -- revert path. Re-derives
+            `defectPriority` from the org's active
+            `defect_priority_mappings` entry for this row's
+            `(asset_type, defect_name)` tuple. 409 with
+            `code='no_mapping_baseline'` if no live row in the same
+            tuple currently carries a mapping-derived priority (the
+            schema must be updated or the CVAT export re-run before a
+            revert can succeed).
+          * `prioritySource: 'cvat_other_defect'` -- read-only via
+            this endpoint; only the CVAT export can assign that source.
+          * `reviewed` -- bool. true stamps `reviewedAt=now()` and
+            `reviewedByActorId=<caller>` (the customer-portal "Reviewed
+            by" mark); false clears both. The reviewer identity is taken
+            from the auth context, never the body.
+        All writes trigger the `stream_priority_defects` database
+        trigger, which cascades through voltair-streams-priority to
+        recompute the owning asset and (if changed) site priority.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workDoneAt:
+                  type: number
+                  nullable: true
+                  description: "Unix ms timestamp. Null clears the field."
+                defectPriority:
+                  type: integer
+                  minimum: 1
+                  maximum: 4
+                  description: "Manual priority override. Sets prioritySource='manual'."
+                prioritySource:
+                  type: string
+                  enum: [manual, mapping]
+                  description: |
+                    Sent alone with value 'mapping' to revert a manual
+                    override (re-derives priority from the active
+                    mapping). Sent with defectPriority and value
+                    'manual' is allowed but redundant -- defectPriority
+                    alone implies manual.
+                reviewed:
+                  type: boolean
+                  description: |
+                    Customer-portal "Reviewed by" mark. true stamps
+                    reviewedAt + reviewedByActorId from the auth context;
+                    false clears both.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Defect'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /defects:bulk-priority:
+    post:
+      tags: [Assets]
+      operationId: bulkUpdateDefectPriority
+      summary: Bulk-update defect priority for a single (assetType, defectName) tuple
+      description: |
+        Remaps every existing defect row in the caller's organization
+        whose `(assetType, defectName)` matches the request to a new
+        priority. Optionally also rewrites the org's active
+        `defect_priority_mapping` so future CVAT exports use the new
+        value as the schema-derived default.
+
+        Reviewer manual overrides are NEVER touched -- the bulk UPDATE
+        filters by `priority_source='mapping'`. CVAT "Other" catch-all rows
+        (`priority_source='cvat_other_defect'`) are also excluded.
+
+        At least one of `applyToExisting` or `alsoUpdateMapping` must be
+        true (otherwise the request is a no-op and is rejected).
+
+        Permission: `defects:write`.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetType, defectName, priority]
+              properties:
+                assetType:
+                  type: string
+                  description: "Slug of the asset_type column (e.g. 'wood_pole')."
+                defectName:
+                  type: string
+                  description: "Composed defect_name string (e.g. 'Pole (Wood): Crack/Split - major')."
+                priority:
+                  type: integer
+                  minimum: 1
+                  maximum: 4
+                applyToExisting:
+                  type: boolean
+                  default: false
+                  description: "When true, update every matching mapping-derived defect row in the org."
+                alsoUpdateMapping:
+                  type: boolean
+                  default: false
+                  description: "When true, also bump defect_priority_mappings to a new active version with this tuple's priority changed."
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    type: object
+                    required: [defectsUpdated, assetsRecomputed, sitesRecomputed]
+                    properties:
+                      defectsUpdated:
+                        type: integer
+                      assetsRecomputed:
+                        type: integer
+                      sitesRecomputed:
+                        type: integer
+                      mappingVersion:
+                        type: integer
+                        description: "Present only when alsoUpdateMapping=true."
+                      mappingId:
+                        type: string
+                        format: uuid
+                        description: "Present only when alsoUpdateMapping=true."
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: "alsoUpdateMapping=true but the active mapping has no entry for (assetType, defectName)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /defect-priority-mapping:
+    get:
+      tags: [Assets]
+      operationId: getDefectPriorityMapping
+      summary: Get the active defect priority mapping for the caller's organization
+      description: |
+        Returns the active row from `app.defect_priority_mappings` (a
+        per-org JSONB schema mapping `(Equipment, Type, Defect)` to
+        `(asset_type, priority)`). 404 when none exists; the org must be
+        seeded via the admin API before customer-facing edits are allowed.
+
+        Permission: `defects:read`.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DefectPriorityMapping'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Assets]
+      operationId: putDefectPriorityMapping
+      summary: Replace the active defect priority mapping (priority values only)
+      description: |
+        Versioned write: deactivates the prior active row and inserts a
+        new one with `version+1`. Customer-facing edits are LIMITED TO
+        priority values: the `(Equipment, Type, Defect)` keyset is
+        immutable from this endpoint. Adding or removing keys requires a
+        super-admin re-import via the admin API after the CVAT project
+        schema is updated -- 409 with `code='schema_keys_immutable'`
+        when the request would change the keyset.
+
+        Optional `applyToExisting` (default false) bulk-rewrites every
+        existing defect row whose `(asset_type, defect_name)`
+        tuple has a changed priority value, while preserving rows
+        marked `priority_source='manual'`.
+
+        Permission: `defects:write`.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mapping]
+              properties:
+                mapping:
+                  type: object
+                  description: |
+                    Three-level Equipment / Type / Defect JSONB. See
+                    voltair-admin-api/src/service/defect_priority_mapping.go::validateMappingShape
+                    for the canonical shape; it is enforced server-side.
+                applyToExisting:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    type: object
+                    required: [id, version, mapping, defectsUpdated, assetsRecomputed, sitesRecomputed]
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      version:
+                        type: integer
+                      mapping:
+                        type: object
+                      defectsUpdated:
+                        type: integer
+                      assetsRecomputed:
+                        type: integer
+                      sitesRecomputed:
+                        type: integer
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: "Mapping keyset differs from the active version (or asset_type changed)."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Clusters
+  # ---------------------------------------------------------------------------
+  /clusters:
+    get:
+      tags: [Clusters]
+      operationId: listClusters
+      summary: List clusters
+      parameters:
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: bounds
+          in: query
+          schema:
+            type: string
+          description: "Bounding box: minLng,minLat,maxLng,maxLat"
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Cluster'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Clusters]
+      operationId: createCluster
+      summary: Create cluster
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClusterRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cluster'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clusters/bulk:
+    post:
+      tags: [Clusters]
+      operationId: bulkCreateClusters
+      summary: Bulk create clusters
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [clusters]
+              properties:
+                clusters:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateClusterRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Cluster'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clusters/{clusterId}:
+    parameters:
+      - name: clusterId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Clusters]
+      operationId: getCluster
+      summary: Get cluster
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cluster'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Clusters]
+      operationId: updateCluster
+      summary: Update cluster
+      description: Updates a cluster. Cannot edit id or organizationId.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClusterRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cluster'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Clusters]
+      operationId: deleteCluster
+      summary: Delete cluster
+      description: >-
+        Soft-deletes a cluster. Sites in the cluster retain their clusterId but
+        the cluster is hidden from queries.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cluster'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Missions
+  # ---------------------------------------------------------------------------
+  /missions:
+    get:
+      tags: [Missions]
+      operationId: listMissions
+      summary: List missions
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Comma-separated statuses
+        - name: siteGeometries
+          in: query
+          schema:
+            type: string
+          description: Comma-separated geometry type filter (point, line, area)
+        - name: scheduledAfter
+          in: query
+          schema:
+            type: number
+          description: Unix timestamp (ms) lower bound on scheduledFor
+        - name: scheduledBefore
+          in: query
+          schema:
+            type: number
+          description: Unix timestamp (ms) upper bound on scheduledFor
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Mission'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Missions]
+      operationId: createMission
+      summary: Create mission
+      description: >-
+        Creates a mission. Body may include siteIds and/or clusterIds. When a
+        cluster ID is provided, all sites in that cluster are included. The server
+        expands cluster IDs into individual sites, creating a SiteVisit for every
+        site and a ClusterVisit for each fully-covered cluster.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMissionRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /missions/{missionId}:
+    parameters:
+      - name: missionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Missions]
+      operationId: getMission
+      summary: Get mission
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Missions]
+      operationId: updateMission
+      summary: Update mission
+      description: Updates a mission. Cannot edit id or organizationId.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMissionRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Missions]
+      operationId: deleteMission
+      summary: Delete mission
+      description: >-
+        Soft-deletes the mission. SiteVisits and ClusterVisits are untouched,
+        hidden by RLS/query filtering on the mission's deletedAt.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /missions/{missionId}/sites:
+    parameters:
+      - name: missionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [Missions]
+      operationId: addMissionSites
+      summary: Add sites to mission
+      description: >-
+        Adds sites to an existing mission. The server expands cluster IDs into
+        individual sites, creates SiteVisit rows for each new site, and creates
+        or updates ClusterVisit records. Sites already in the mission are ignored.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MissionSitesRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Missions]
+      operationId: removeMissionSites
+      summary: Remove sites from mission
+      description: >-
+        Removes sites from an existing mission. Soft-deletes the corresponding
+        SiteVisit rows and adjusts ClusterVisit counts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MissionSitesRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Mission'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Cluster Visits (read-only)
+  # ---------------------------------------------------------------------------
+  /cluster-visits:
+    get:
+      tags: [ClusterVisits]
+      operationId: listClusterVisits
+      summary: List cluster visits for a mission
+      parameters:
+        - name: missionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClusterVisit'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /cluster-visits/{clusterVisitId}:
+    parameters:
+      - name: clusterVisitId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [ClusterVisits]
+      operationId: getClusterVisit
+      summary: Get cluster visit
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ClusterVisit'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Site Visits (read-only)
+  # ---------------------------------------------------------------------------
+  /site-visits:
+    get:
+      tags: [SiteVisits]
+      operationId: listSiteVisits
+      summary: List site visits for a mission
+      description: |
+        Returns site visits for the given mission. When `compress=true`, returns
+        a mixed array of the highest-level ClusterVisit and unclustered SiteVisit
+        objects instead of the paginated list. Each item in the compressed
+        response includes a `type` discriminator field (`"clusterVisit"` or
+        `"siteVisit"`).
+      parameters:
+        - name: missionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: compress
+          in: query
+          schema:
+            type: boolean
+          description: >
+            When true, returns a compressed representation: a mixed array of
+            the highest-level ClusterVisit objects (whose parent cluster has no
+            ClusterVisit in this mission) and unclustered SiteVisit objects.
+            Pagination parameters are ignored when compress=true.
+        - name: unclustered
+          in: query
+          schema:
+            type: boolean
+          description: When true, returns only visits where clusterVisitId is null
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Comma-separated statuses
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    required: [data, meta]
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SiteVisit'
+                      meta:
+                        $ref: '#/components/schemas/PaginationMeta'
+                  - $ref: '#/components/schemas/CompressedVisitsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /site-visits/{siteVisitId}:
+    parameters:
+      - name: siteVisitId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [SiteVisits]
+      operationId: getSiteVisit
+      summary: Get site visit
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SiteVisit'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Media & Comments
+  # ---------------------------------------------------------------------------
+  /media:
+    get:
+      tags: [Media]
+      operationId: listMedia
+      summary: List media for a mission
+      parameters:
+        - name: missionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: vehicleId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: mediaType
+          in: query
+          schema:
+            type: string
+          description: Comma-separated media types (image, video)
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MissionMedia'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Media]
+      operationId: createMedia
+      summary: Create a media row
+      description: |
+        Creates a mission_media row and returns it along with a short-lived
+        presigned S3 upload URL the caller uses to PUT the actual object.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMediaRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/MissionMedia'
+                      - type: object
+                        required: [uploadUrl]
+                        properties:
+                          uploadUrl:
+                            type: string
+                            description: Presigned PUT URL valid for a short window.
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /media/download-url:
+    post:
+      tags: [Media]
+      operationId: createMediaDownloadUrl
+      summary: Issue a signed URL for the mission-zip download
+      description: |
+        Returns a short-lived HMAC-signed URL pointing at /media/download.zip
+        that carries its own auth proof in the query string, so a plain
+        `<a href download>` click in the browser can trigger the download
+        without forging an Authorization header.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMediaDownloadUrlRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [url, expiresAt]
+                    properties:
+                      url:
+                        type: string
+                      expiresAt:
+                        type: string
+                        format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /media/download.zip:
+    get:
+      tags: [Media]
+      operationId: downloadMissionMediaZip
+      summary: Download all (optionally filtered) mission media as a streaming zip
+      description: |
+        Streams a zip archive containing the original media files for a mission.
+        The archive is generated server-side by fetching each object directly
+        from S3 — no client-side file-count limits or cross-origin navigation.
+        Entries are organised as `<siteName>/<ISO-timestamp>.<ext>` with
+        unassigned media grouped under `_unassigned/`.
+      parameters:
+        - name: missionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: siteId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Restrict to a single site.
+        - name: mediaIds
+          in: query
+          required: false
+          schema:
+            type: string
+          description: |
+            Comma-separated list of media UUIDs. Overrides `siteId` when set;
+            the zip contains exactly these rows, ordered by site and capture time.
+        - name: includeEvidenceCrops
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ['true']
+          description: |
+            When `true`, annotated evidence crops (original photo cropped
+            around each defect_evidence bbox with a priority-colored
+            stroke) are rendered on demand and appended under `evidence/`.
+            Opt-in because rendering is CPU-bound and extends the download.
+            On the signed-URL path the flag is covered by the HMAC claims.
+      responses:
+        '200':
+          description: Streaming zip archive
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="mission-<uuid>.zip"'
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /media/{mediaId}/download:
+    parameters:
+      - name: mediaId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Media]
+      operationId: downloadMissionMediaSingle
+      summary: Download a single media object
+      description: |
+        Streams the original S3 object for a single media row with an
+        `attachment` Content-Disposition header. Used by the demo-ui
+        lightbox and inspection-row download buttons to avoid the CORS
+        and cross-origin `<a download>` limitations of going directly
+        to CloudFront.
+      responses:
+        '200':
+          description: Raw media bytes
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="2026-04-18T00-12-34Z-6c858984.JPG"'
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          description: Upstream S3 read failed
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /defect-evidence/{evidenceId}/download:
+    parameters:
+      - name: evidenceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Media]
+      operationId: downloadDefectEvidence
+      summary: Download the annotated evidence crop for a defect_evidence row
+      description: |
+        Renders the downloadable artifact for one defect_evidence row on
+        demand. When the row carries a bbox, the response is the ORIGINAL
+        photo cropped to a square window with 30% margin around the bbox and
+        the bbox stroked in the defect's priority color — exactly what the
+        platform's evidence viewer shows on screen. When the row has no bbox
+        (non-CVAT-sourced evidence), the original object is streamed
+        unmodified. Replaces the retired stored crop derivatives.
+      responses:
+        '200':
+          description: Annotated crop JPEG (or the original object when no bbox)
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="annotated-2026-04-18T00-12-34Z-6c858984.jpg"'
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          description: Upstream S3 read failed
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /media/{mediaId}:
+    parameters:
+      - name: mediaId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Media]
+      operationId: getMedia
+      summary: Get media item
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MissionMedia'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /media/{mediaId}/comments:
+    parameters:
+      - name: mediaId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Media]
+      operationId: listMediaComments
+      summary: List comments on a media item
+      description: |
+        Returns the comments attached to a media item in chronological
+        (oldest-first) order. Each comment's `actor` is expanded; for
+        actor.type == "user", the `actor.user` object contains the first
+        name, last name, and email of the commenter.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaComment'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Media]
+      operationId: createMediaComment
+      summary: Add comment to media
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMediaCommentRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MediaComment'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Inspections (flat)
+  # ---------------------------------------------------------------------------
+  /inspections:
+    get:
+      tags: [Inspections]
+      operationId: listInspections
+      summary: List site inspections
+      description: >-
+        Returns SiteInspection records for the caller's organization. All filter
+        parameters are optional; row-level security confines results to the
+        caller's organization.
+      parameters:
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Restrict to inspections for a single site.
+        - name: missionId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Restrict to inspections for a single mission.
+        - name: assetId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Restrict to inspections that contain at least one asset inspection for this asset.
+        - name: hasComments
+          in: query
+          schema:
+            type: boolean
+          description: >-
+            When `true`, restrict to inspections that have at least one comment
+            on any associated media (site-level via `site_inspection_media`, or
+            asset-level via the site's `asset_inspections`). Any other value is
+            treated as absent.
+        - name: siteName
+          in: query
+          schema:
+            type: string
+          description: >-
+            Case-insensitive substring match (ILIKE) on the joined site's
+            `name`. Pass plain text; the server wraps it with `%` on both
+            sides.
+        - name: siteType[]
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                [distribution_pole, transmission_pole, substation,
+                 transmission_line, distribution_line, pipeline, railway,
+                 road, other]
+          description: >-
+            Repeating allowlist on the joined site's `site_type`. Empty/absent
+            means any.
+        - name: geometryType[]
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [Point, LineString, Polygon]
+          description: >-
+            Repeating GeoJSON geometry-type allowlist on the joined site's
+            geometry (mapped to `ST_GeometryType` internally). Empty/absent
+            means any.
+        - name: priority[]
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [high, medium, low, none]
+          description: >-
+            Repeating allowlist on the denormalized `sites.priority` column
+            (`none` also matches a NULL priority). Empty/absent means any.
+        - name: resolution[]
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [all_resolved, some_resolved, none_resolved]
+          description: >-
+            Repeating allowlist bucketing each site inspection by its
+            defects' `workDoneAt` flags: `all_resolved` (every defect
+            resolved), `some_resolved` (a mix), `none_resolved` (at least one
+            defect, none resolved). Site inspections with zero defects
+            match no bucket and are excluded when this filter is active.
+        - name: review[]
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [all_reviewed, some_reviewed, none_reviewed]
+          description: >-
+            Repeating allowlist bucketing each site inspection by its
+            defects' `reviewedAt` flags: `all_reviewed` (every defect
+            reviewed), `some_reviewed` (a mix), `none_reviewed` (at least one
+            defect, none reviewed). Site inspections with zero defects
+            match no bucket and are excluded when this filter is active.
+        - name: includeUncapturable
+          in: query
+          schema:
+            type: boolean
+          description: >-
+            When `true`, additionally returns synthesized placeholder
+            SiteInspection rows for mission sites tagged `inaccessible`
+            that have no persisted inspection (no media was captured).
+            Requires `missionId`; sending it without `missionId` is a
+            `400`. Placeholder rows carry `not_capturable: true`, reuse the
+            site's id, and expand a `site` whose `tags` include
+            `inaccessible`. They pass through the same filters and
+            pagination as real rows.
+        - $ref: '#/components/parameters/MediaSourceFilter'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SiteInspection'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /inspections/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Inspections]
+      operationId: getInspection
+      summary: Get a site inspection by id
+      parameters:
+        - $ref: '#/components/parameters/MediaSourceFilter'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SiteInspection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /asset-inspections:
+    get:
+      tags: [Inspections]
+      operationId: listAssetInspections
+      summary: List asset inspections
+      description: >-
+        Returns AssetInspection records for the caller's organization. All
+        filters are optional; row-level security confines results to the
+        caller's organization.
+      parameters:
+        - name: siteInspectionId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Restrict to asset inspections within a single site inspection.
+        - name: missionId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Restrict to asset inspections for a single mission.
+        - name: siteId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Restrict to asset inspections whose parent site inspection belongs to this site.
+        - name: assetId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Restrict to asset inspections for a single asset.
+        - $ref: '#/components/parameters/MediaSourceFilter'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AssetInspection'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /asset-inspections/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Inspections]
+      operationId: getAssetInspection
+      summary: Get an asset inspection by id
+      parameters:
+        - $ref: '#/components/parameters/MediaSourceFilter'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AssetInspection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Events
+  # ---------------------------------------------------------------------------
+  /events:
+    get:
+      tags: [Events]
+      operationId: listEvents
+      summary: List events
+      parameters:
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+          description: Comma-separated resource types
+        - name: resourceId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: action
+          in: query
+          schema:
+            type: string
+          description: Comma-separated actions (create, update, delete)
+        - name: actorId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: after
+          in: query
+          schema:
+            type: number
+          description: Unix timestamp in milliseconds — events after this time
+        - name: before
+          in: query
+          schema:
+            type: number
+          description: Unix timestamp in milliseconds — events before this time
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /events/{eventId}:
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Events]
+      operationId: getEvent
+      summary: Get event
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Event'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Transactions
+  # ---------------------------------------------------------------------------
+  /transactions:
+    get:
+      tags: [Transactions]
+      operationId: listTransactions
+      summary: List transactions
+      parameters:
+        - name: actorId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Comma-separated statuses (committed, undone)
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+          description: Comma-separated resource types
+        - name: resourceId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /transactions/{transactionId}:
+    parameters:
+      - name: transactionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Transactions]
+      operationId: getTransaction
+      summary: Get transaction
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /transactions/{transactionId}/undo:
+    parameters:
+      - name: transactionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [Transactions]
+      operationId: undoTransaction
+      summary: Undo transaction
+      description: >-
+        Atomically reverses all events in the transaction, creating a new
+        transaction representing the inverse operation. Actors with
+        transactions:read can undo their own transactions; transactions:write
+        can undo any actor's. Returns 409 if field-level conflicts exist and
+        force is not set. Returns 400 if the transaction is already undone.
+      parameters:
+        - name: force
+          in: query
+          schema:
+            type: boolean
+          description: >-
+            When true, applies the undo regardless of field-level conflicts,
+            overwriting intervening changes.
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '200':
+          description: Success — returns the newly created undo transaction
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: >-
+            Field-level conflicts exist. The error details include the
+            conflicting event IDs.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # API Keys
+  # ---------------------------------------------------------------------------
+  /api-keys:
+    get:
+      tags: [ApiKeys]
+      operationId: listApiKeys
+      summary: List API keys
+      description: >-
+        Lists all API keys for this org. Returns metadata only (prefix, name,
+        dates) — never the raw key or hash.
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiKey'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [ApiKeys]
+      operationId: createApiKey
+      summary: Create API key
+      description: >-
+        Creates a new API key and its actor record. The role must not have
+        broader permissions than the creating user's role (prevents privilege
+        escalation). Response includes the raw key exactly once.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApiKeyRequest'
+      responses:
+        '201':
+          description: Created — the raw key is included and cannot be retrieved again
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ApiKeyWithRawKey'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api-keys/{keyId}:
+    parameters:
+      - name: keyId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    delete:
+      tags: [ApiKeys]
+      operationId: deleteApiKey
+      summary: Delete API key
+      description: >-
+        Soft-deletes an API key. The key is immediately unusable for
+        authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ApiKey'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ---------------------------------------------------------------------------
+  # Webhooks
+  # ---------------------------------------------------------------------------
+  /webhooks:
+    get:
+      tags: [Webhooks]
+      operationId: listWebhooks
+      summary: List webhooks
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Webhook'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Webhooks]
+      operationId: createWebhook
+      summary: Create webhook
+      description: Creates a webhook. The server generates the signing secret.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Webhook'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /webhooks/{webhookId}:
+    parameters:
+      - name: webhookId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Webhooks]
+      operationId: getWebhook
+      summary: Get webhook
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Webhook'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Webhooks]
+      operationId: updateWebhook
+      summary: Update webhook
+      description: >-
+        Updates a webhook (URL, events, enabled flag). Cannot edit id,
+        organizationId, or secret (use rotate endpoint for secret).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Webhook'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Webhooks]
+      operationId: deleteWebhook
+      summary: Delete webhook
+      description: >-
+        Soft-deletes a webhook. Delivery history is retained for audit purposes.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Webhook'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /webhooks/{webhookId}/rotate-secret:
+    parameters:
+      - name: webhookId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [Webhooks]
+      operationId: rotateWebhookSecret
+      summary: Rotate webhook secret
+      description: Generates a new signing secret. Returns the updated webhook with the new secret.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, transactionId]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Webhook'
+                  transactionId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /webhooks/{webhookId}/test:
+    parameters:
+      - name: webhookId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [Webhooks]
+      operationId: testWebhook
+      summary: Test webhook
+      description: >-
+        Sends a test payload to the webhook URL. Returns the delivery result
+        (status code, response time, error).
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WebhookDelivery'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /webhooks/{webhookId}/deliveries:
+    parameters:
+      - name: webhookId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Webhooks]
+      operationId: listWebhookDeliveries
+      summary: List webhook deliveries
+      parameters:
+        - name: event
+          in: query
+          schema:
+            type: string
+          description: Filter by webhook event type
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookDelivery'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+# =============================================================================
+# Components
+# =============================================================================
+components:
+
+  # ---------------------------------------------------------------------------
+  # Security Schemes
+  # ---------------------------------------------------------------------------
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Cognito JWT access token
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Organization-scoped API key
+
+  # ---------------------------------------------------------------------------
+  # Reusable Parameters
+  # ---------------------------------------------------------------------------
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
+
+    MediaSourceFilter:
+      name: mediaSource[]
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+          enum: [drone, screenshot, upload, contractor, cvat_crop]
+      description: >-
+        Optional allowlist applied to expanded `media` rows. When supplied,
+        only `mission_media` rows whose `source` is in the list are returned
+        in the expanded `media` field; non-media expansions (e.g. `site`,
+        `cluster`) ignore the filter. Empty/omitted means no filtering. The
+        dashboard's site-level photo carousel uses this to keep `cvat_crop`
+        derivative crops out while still letting `/asset-inspections`
+        surface them under `asset_inspection_media`. Allowed values mirror
+        the `mission_media.source` CHECK constraint.
+
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: >-
+        Idempotency key for POST requests. If a transaction with the same key
+        already exists for the org, the server returns the original response
+        without re-executing. Keys are valid for 48 hours.
+
+  # ---------------------------------------------------------------------------
+  # Reusable Headers
+  # ---------------------------------------------------------------------------
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
+
+  # ---------------------------------------------------------------------------
+  # Reusable Responses
+  # ---------------------------------------------------------------------------
+  responses:
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Conflict (duplicate resource, in-use resource, or undo conflict)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  # ---------------------------------------------------------------------------
+  # Schemas
+  # ---------------------------------------------------------------------------
+  schemas:
+
+    # -------------------------------------------------------
+    # Error envelope
+    # -------------------------------------------------------
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+
+    # -------------------------------------------------------
+    # Pagination meta
+    # -------------------------------------------------------
+    PaginationMeta:
+      type: object
+      required: [cursor]
+      properties:
+        cursor:
+          type: string
+          nullable: true
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+
+    # -------------------------------------------------------
+    # GeoJSON Geometry Types
+    # -------------------------------------------------------
+    PointGeometry:
+      type: object
+      required: [type, coordinates]
+      properties:
+        type:
+          type: string
+          enum: [Point]
+        coordinates:
+          type: array
+          description: "[longitude, latitude] or [longitude, latitude, altitude]"
+          items:
+            type: number
+          minItems: 2
+          maxItems: 3
+
+    LineStringGeometry:
+      type: object
+      required: [type, coordinates]
+      properties:
+        type:
+          type: string
+          enum: [LineString]
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+            minItems: 2
+            maxItems: 3
+          minItems: 2
+
+    PolygonGeometry:
+      type: object
+      required: [type, coordinates]
+      properties:
+        type:
+          type: string
+          enum: [Polygon]
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: array
+              items:
+                type: number
+              minItems: 2
+              maxItems: 3
+            minItems: 4
+
+    MultiLineStringGeometry:
+      type: object
+      required: [type, coordinates]
+      properties:
+        type:
+          type: string
+          enum: [MultiLineString]
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: array
+              items:
+                type: number
+              minItems: 2
+              maxItems: 3
+            minItems: 2
+
+    SiteGeometry:
+      description: GeoJSON geometry for sites (Point, LineString, or Polygon)
+      oneOf:
+        - $ref: '#/components/schemas/PointGeometry'
+        - $ref: '#/components/schemas/LineStringGeometry'
+        - $ref: '#/components/schemas/PolygonGeometry'
+      discriminator:
+        propertyName: type
+        mapping:
+          Point: '#/components/schemas/PointGeometry'
+          LineString: '#/components/schemas/LineStringGeometry'
+          Polygon: '#/components/schemas/PolygonGeometry'
+
+    ClusterGeometry:
+      description: GeoJSON geometry for clusters (Polygon, LineString, or MultiLineString)
+      oneOf:
+        - $ref: '#/components/schemas/PolygonGeometry'
+        - $ref: '#/components/schemas/LineStringGeometry'
+        - $ref: '#/components/schemas/MultiLineStringGeometry'
+      discriminator:
+        propertyName: type
+        mapping:
+          Polygon: '#/components/schemas/PolygonGeometry'
+          LineString: '#/components/schemas/LineStringGeometry'
+          MultiLineString: '#/components/schemas/MultiLineStringGeometry'
+
+    # -------------------------------------------------------
+    # Shared value types
+    # -------------------------------------------------------
+    PointSiteType:
+      type: string
+      enum:
+        - distribution_pole
+        - transmission_pole
+        - substation
+        - other
+
+    AreaSiteType:
+      type: string
+      enum:
+        - utility_substation
+        - other
+
+    LineSiteType:
+      type: string
+      enum:
+        - transmission_line
+        - distribution_line
+        - pipeline
+        - railway
+        - road
+        - other
+
+    SiteType:
+      type: string
+      description: Union of PointSiteType, AreaSiteType, and LineSiteType
+      enum:
+        - distribution_pole
+        - transmission_pole
+        - substation
+        - utility_substation
+        - transmission_line
+        - distribution_line
+        - pipeline
+        - railway
+        - road
+        - other
+
+    AssetPriority:
+      type: string
+      enum: [high, medium, low, none]
+
+    ClusterLevel:
+      type: integer
+      minimum: 1
+      maximum: 3
+      description: "1 = coarsest, 3 = finest"
+
+    MissionStatus:
+      type: string
+      enum: [scheduled, canceled, in-progress, recurring, complete]
+
+    DetailLevel:
+      type: string
+      enum: [low, medium, high]
+
+    Recurrence:
+      type: string
+      enum: [daily, weekly, monthly, yearly]
+
+    SensorRequirement:
+      type: string
+      enum:
+        - hi-def
+        - any
+        - "no"
+
+    LidarRequirement:
+      type: string
+      enum:
+        - "yes"
+        - "no"
+        - any
+
+    ThermalRequirement:
+      type: string
+      enum:
+        - 640x480
+        - any
+        - "no"
+
+    MediaType:
+      type: string
+      enum: [image, video]
+
+    CaptureType:
+      type: string
+      nullable: true
+      enum: [rgb, thermal]
+      description: Spectral modality of the frame, served directly from mission_media.capture_type (the single source of truth). null means the modality is unknown (not yet classified); it is never coerced to rgb.
+
+    SiteVisitStatus:
+      type: string
+      enum: [pending, in-progress, complete, skipped, failed]
+
+    ClusterVisitStatus:
+      type: string
+      enum: [pending, in-progress, complete]
+
+    UserStatus:
+      type: string
+      enum: [active, invited, deactivated]
+
+    TransactionStatus:
+      type: string
+      enum: [committed, undone]
+
+    EventResourceType:
+      type: string
+      enum:
+        - site
+        - cluster
+        - mission
+        - cluster_visit
+        - site_visit
+        - mission_media
+        - asset
+        - defect
+        - site_inspection
+        - asset_inspection
+        - organization
+        - user
+        - role
+        - api_key
+        - webhook
+
+    EventActionType:
+      type: string
+      enum: [create, update, delete]
+
+    PermissionResource:
+      type: string
+      enum:
+        - sites
+        - missions
+        - media
+        - organization
+        - users
+        - roles
+        - billing
+        - developer
+        - events
+        - transactions
+
+    PermissionLevel:
+      type: string
+      enum: [none, read, write]
+
+    WebhookEvent:
+      type: string
+      enum:
+        - mission.scheduled
+        - mission.started
+        - mission.completed
+        - mission.failed
+        - processing.started
+        - processing.completed
+
+    # -------------------------------------------------------
+    # Supporting object types
+    # -------------------------------------------------------
+    Address:
+      type: object
+      required: [street, city, state, zip, country]
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+
+    CameraOrientation:
+      type: object
+      required: [center, zoom, bearing, pitch]
+      properties:
+        center:
+          type: array
+          description: "[longitude, latitude]"
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+        zoom:
+          type: number
+        bearing:
+          type: number
+        pitch:
+          type: number
+
+    LineProperties:
+      type: object
+      required: [geometryType, width]
+      properties:
+        geometryType:
+          type: string
+          enum: [line]
+        width:
+          type: number
+
+    SiteProperties:
+      description: Site-type-specific properties; currently only LineProperties
+      oneOf:
+        - $ref: '#/components/schemas/LineProperties'
+
+    SensorRequirements:
+      type: object
+      required: [camera, lidar, thermal]
+      properties:
+        camera:
+          $ref: '#/components/schemas/SensorRequirement'
+        lidar:
+          $ref: '#/components/schemas/LidarRequirement'
+        thermal:
+          $ref: '#/components/schemas/ThermalRequirement'
+
+    Permission:
+      type: object
+      required: [resource, level]
+      properties:
+        resource:
+          $ref: '#/components/schemas/PermissionResource'
+        level:
+          $ref: '#/components/schemas/PermissionLevel'
+
+    GeometryCounts:
+      type: object
+      required: [point, line, area]
+      properties:
+        point:
+          type: integer
+        line:
+          type: integer
+        area:
+          type: integer
+
+    GeoLocation:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+        altitude:
+          type: number
+
+    GimbalOrientation:
+      type: object
+      required: [yaw, pitch, roll]
+      properties:
+        yaw:
+          type: number
+          description: Gimbal yaw in degrees
+        pitch:
+          type: number
+          description: Gimbal pitch in degrees
+        roll:
+          type: number
+          description: Gimbal roll in degrees
+
+    Resolution:
+      type: object
+      required: [width, height]
+      properties:
+        width:
+          type: integer
+        height:
+          type: integer
+
+    GeoPathPoint:
+      type: object
+      required: [timestampSec, lat, lng]
+      properties:
+        timestampSec:
+          type: number
+        lat:
+          type: number
+        lng:
+          type: number
+        altitude:
+          type: number
+
+    # -------------------------------------------------------
+    # Domain models
+    # -------------------------------------------------------
+    Organization:
+      type: object
+      required: [id, name, featureFlags, deletedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        logoUrl:
+          type: string
+        contactEmail:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
+        featureFlags:
+          type: object
+          description: >
+            Per-organization feature flags. Keys are camelCase flag names,
+            values are typed (currently only booleans). A missing key means
+            the feature is off; each consumer documents its own default at
+            the read site. Known keys:
+              - fakeDroneVideo (boolean): when true, ViewMissionPage shows the
+                demo drone video loop for missions whose status is
+                "in-progress". Defaults to off when missing.
+          additionalProperties: true
+        deletedAt:
+          type: number
+          nullable: true
+          description: Soft-delete Unix timestamp in milliseconds; null if not deleted
+        createdAt:
+          type: number
+          description: Unix timestamp in milliseconds
+        updatedAt:
+          type: number
+          description: Unix timestamp in milliseconds
+
+    Role:
+      type: object
+      required: [id, name, description, permissions, isSystem, canSwitchOrganizations, deletedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "NULL for global roles (e.g. super-admin)"
+        slug:
+          type: string
+          nullable: true
+          description: "Stable identifier for the super-admin role"
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+        isSystem:
+          type: boolean
+        canSwitchOrganizations:
+          type: boolean
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+
+    User:
+      type: object
+      required: [id, actorId, cognitoId, firstName, lastName, email, status, deletedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        actorId:
+          type: string
+          format: uuid
+        cognitoId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        avatarUrl:
+          type: string
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        invitedAt:
+          type: number
+          nullable: true
+        joinedAt:
+          type: number
+          nullable: true
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+
+    Site:
+      type: object
+      required: [type, id, organizationId, name, siteType, geometry, deletedAt, createdAt, updatedAt]
+      properties:
+        type:
+          type: string
+          enum: [Feature]
+          description: GeoJSON Feature type constant
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        externalId:
+          type: string
+          description: Optional customer-facing identifier
+        name:
+          type: string
+        siteType:
+          $ref: '#/components/schemas/SiteType'
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        clusterId:
+          type: string
+          format: uuid
+        cameraOrientation:
+          $ref: '#/components/schemas/CameraOrientation'
+        geometry:
+          $ref: '#/components/schemas/SiteGeometry'
+        properties:
+          $ref: '#/components/schemas/SiteProperties'
+        priority:
+          $ref: '#/components/schemas/AssetPriority'
+          description: Read-only; derived from highest-severity defect
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+
+    Cluster:
+      type: object
+      required: [id, organizationId, count, parentId, level, siteTypes, geometryCounts, name, centroid, bounds, geometry, deletedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        count:
+          type: integer
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        level:
+          $ref: '#/components/schemas/ClusterLevel'
+        siteTypes:
+          type: array
+          items:
+            type: string
+        geometryCounts:
+          $ref: '#/components/schemas/GeometryCounts'
+        name:
+          type: string
+        centroid:
+          type: array
+          description: "[longitude, latitude]"
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+        bounds:
+          type: array
+          description: "[minLng, minLat, maxLng, maxLat]"
+          items:
+            type: number
+          minItems: 4
+          maxItems: 4
+        geometry:
+          $ref: '#/components/schemas/ClusterGeometry'
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+
+    Mission:
+      type: object
+      required: [id, organizationId, name, description, status, detailLevel, sensors, createdAt, scheduledFor, estimatedCompletionTime, estimatedCost, siteCount, deletedAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MissionStatus'
+        detailLevel:
+          $ref: '#/components/schemas/DetailLevel'
+        sensors:
+          $ref: '#/components/schemas/SensorRequirements'
+        createdAt:
+          type: number
+        scheduledFor:
+          type: number
+        estimatedCompletionTime:
+          type: number
+        dueDate:
+          type: number
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        estimatedCost:
+          type: number
+        siteGeometries:
+          type: array
+          items:
+            type: string
+            enum: [point, line, area]
+        siteCount:
+          type: integer
+          description: Total number of active site visits in this mission
+        bounds:
+          type: array
+          description: |
+            Bounding box of all active site geometries in this mission,
+            as [minLng, minLat, maxLng, maxLat]. Null when the mission has
+            no active site visits.
+          items:
+            type: number
+          minItems: 4
+          maxItems: 4
+          nullable: true
+        deletedAt:
+          type: number
+          nullable: true
+        updatedAt:
+          type: number
+
+    ClusterVisit:
+      type: object
+      required: [id, organizationId, missionId, clusterId, siteCount, completedCount, status, deletedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        clusterId:
+          type: string
+          format: uuid
+        siteCount:
+          type: integer
+        completedCount:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ClusterVisitStatus'
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+
+    SiteVisit:
+      type: object
+      required: [id, organizationId, missionId, siteId, clusterVisitId, status, completedAt, recaptureReason, recaptureRequestedBy, recaptureRequestedAt, deletedAt, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        siteId:
+          type: string
+          format: uuid
+        clusterVisitId:
+          type: string
+          format: uuid
+          nullable: true
+          description: FK to ClusterVisit; null for unclustered sites
+        status:
+          $ref: '#/components/schemas/SiteVisitStatus'
+        completedAt:
+          type: number
+          nullable: true
+        recaptureReason:
+          type: string
+          nullable: true
+        recaptureRequestedBy:
+          type: string
+          format: uuid
+          nullable: true
+          description: actorId of the requester
+        recaptureRequestedAt:
+          type: number
+          nullable: true
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+
+    CompressedVisitsResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          description: >
+            Mixed array of ClusterVisit and SiteVisit objects. Each item
+            includes a `type` field: `"clusterVisit"` or `"siteVisit"`.
+            ClusterVisit items represent the highest-level clusters whose
+            parent cluster does not have a ClusterVisit in the mission.
+            SiteVisit items are unclustered site visits.
+          items:
+            oneOf:
+              - allOf:
+                  - type: object
+                    required: [type]
+                    properties:
+                      type:
+                        type: string
+                        enum: [clusterVisit]
+                  - $ref: '#/components/schemas/ClusterVisit'
+              - allOf:
+                  - type: object
+                    required: [type]
+                    properties:
+                      type:
+                        type: string
+                        enum: [siteVisit]
+                  - $ref: '#/components/schemas/SiteVisit'
+            discriminator:
+              propertyName: type
+              mapping:
+                clusterVisit: '#/components/schemas/ClusterVisit'
+                siteVisit: '#/components/schemas/SiteVisit'
+        meta:
+          type: object
+          required: [totalSiteCount]
+          properties:
+            totalSiteCount:
+              type: integer
+              description: Total number of sites represented across all items
+
+    MissionMedia:
+      type: object
+      required: [id, organizationId, missionId, vehicleId, mediaType, captureType, url, thumbnailUrl, capturedAt, geoLocation, deletedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+          description: Reference to the vehicle (e.g. drone) that captured this media
+        siteId:
+          type: string
+          format: uuid
+        mediaType:
+          $ref: '#/components/schemas/MediaType'
+        captureType:
+          $ref: '#/components/schemas/CaptureType'
+        url:
+          type: string
+          description: Opaque asset URL
+        thumbnailUrl:
+          type: string
+        capturedAt:
+          type: number
+        captureDevice:
+          type: string
+          description: Camera/sensor used for capture (e.g. "Zenmuse H30T Wide")
+        orientation:
+          $ref: '#/components/schemas/GimbalOrientation'
+        focalLength:
+          type: number
+          description: Focal length in mm
+        digitalZoom:
+          type: number
+          description: Digital zoom ratio (1.0 = no zoom)
+        fov:
+          type: number
+          description: Diagonal field of view in degrees
+        resolution:
+          $ref: '#/components/schemas/Resolution'
+        geoLocation:
+          allOf:
+            - $ref: '#/components/schemas/GeoLocation'
+          nullable: true
+          description: Required for images; null for video
+        duration:
+          type: number
+          description: Video length in seconds
+        geoPath:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeoPathPoint'
+          description: Video flight path; null for images
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+        commentCount:
+          type: integer
+          description: Count of comments attached to this media row.
+        thermalRange:
+          type: object
+          nullable: true
+          description: >-
+            Compact Fahrenheit min/max thermal scale for lightbox overlays,
+            derived from mission_media.metadata thermal stats. This is DATA, not
+            a modality classifier (see captureType). null when the frame has no
+            thermal stats, so the overlay simply hides.
+          properties:
+            minTempF:
+              type: number
+              nullable: true
+            maxTempF:
+              type: number
+              nullable: true
+        thermalDisplayRamp:
+          type: array
+          nullable: true
+          description: >-
+            Measured per-image display ramp: ordered hex color stops (cold->hot,
+            e.g. ["#151515", ..., "#f7f7f7"]) recovered by correlating the
+            frame's temperature grid with its rendered pixels. The client renders
+            these stops directly as the thermal scale-bar gradient (top=hot), so
+            the bar matches the frame's actual pixels for any palette — including
+            Skydio's per-image isotherm overlay, which a palette name cannot
+            describe. This is a DISPLAY fact, distinct from captureType (spectral
+            modality) and thermalRange (temperature data). null when the frame has
+            no measured ramp, so the overlay hides.
+          items:
+            type: string
+
+    MediaComment:
+      type: object
+      required: [id, mediaId, text, createdAt, actor]
+      properties:
+        id:
+          type: string
+          format: uuid
+        mediaId:
+          type: string
+          format: uuid
+        text:
+          type: string
+        createdAt:
+          type: number
+        actor:
+          type: object
+          required: [id, type]
+          properties:
+            id:
+              type: string
+              format: uuid
+            type:
+              type: string
+              enum: [user, api_key, system]
+            user:
+              nullable: true
+              type: object
+              required: [id, firstName, lastName, email]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                avatarUrl:
+                  type: string
+                  nullable: true
+
+    Asset:
+      type: object
+      required: [id, organizationId, siteId, name, priority, deletedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        siteId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        priority:
+          $ref: '#/components/schemas/AssetPriority'
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+
+    Defect:
+      type: object
+      required: [id, organizationId, assetId, assetInspectionId, assetType, defectName, defectPriority, prioritySource, workDoneAt, deletedAt, createdAt]
+      description: |
+        Merged defect. One row per (assetInspectionId, defectName) at a
+        time. Per-CVAT-shape evidence (bbox, evidence photo, original
+        per-shape description) lives on DefectEvidence and is exposed via
+        `expand[]=evidence` (or, on listInspections,
+        `expand[]=asset.defects.evidence`). The `description` field on
+        this schema is the denormalized "longest non-empty live evidence
+        description" cache maintained by the CVAT export.
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        assetId:
+          type: string
+          format: uuid
+        assetInspectionId:
+          type: string
+          format: uuid
+        assetType:
+          type: string
+        defectName:
+          type: string
+        defectPriority:
+          type: integer
+          minimum: 1
+          maximum: 4
+          description: "1 = highest severity, 4 = none/normal"
+        prioritySource:
+          type: string
+          enum: [mapping, manual, cvat_other_defect]
+          description: |
+            Where `defectPriority` came from. Bulk schema edits only
+            touch rows where `prioritySource='mapping'` so reviewer
+            manual overrides survive. `cvat_other_defect` is excluded
+            because that priority is contractor-self-rated per shape,
+            not derived from the org-wide schema.
+        defectPriorityMappingId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Active defect_priority_mappings.id at the time defectPriority was last derived. Informational/audit; nullable on legacy rows imported before this column existed."
+        workDoneAt:
+          type: number
+          nullable: true
+          description: "Unix ms timestamp marking this defect as addressed in the field. Null while unaddressed. When non-null, the defect is excluded from the asset priority rollup."
+        reviewedAt:
+          type: number
+          nullable: true
+          description: "Unix ms timestamp the customer marked this defect reviewed (the 'Reviewed by' mark). Null when not reviewed. Set/cleared via PATCH /defects/{id} { reviewed }."
+        reviewedByName:
+          type: string
+          nullable: true
+          description: "Display name of the actor who set the current reviewed state. Null when not reviewed; empty string for api-key actors with no user row. Resolved from reviewedByActorId; present on list/expand reads, omitted on the mutation response."
+        description:
+          type: string
+          nullable: true
+          description: "Longest non-empty `description` across the parent's live DefectEvidence rows. Maintained by the CVAT export — the API and UI read this column directly rather than aggregating across evidence on every fetch."
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        evidence:
+          type: array
+          description: "Populated only when `evidence` is requested via expand[]. Otherwise omitted."
+          items:
+            $ref: '#/components/schemas/DefectEvidence'
+
+    DefectPriorityMapping:
+      type: object
+      required: [id, organizationId, mapping, version, isActive]
+      description: |
+        Per-org JSONB rule set mapping a CVAT
+        `(Equipment, Type, Defect)` tuple to an `asset_type` and a
+        `priority` integer (1..4). One active row per organization at a
+        time; saving a new version deactivates the prior active row.
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        mapping:
+          type: object
+          description: |
+            `{ "<Equipment>": { "<Type>": { "asset_type": "<slug>", "defects": { "<Defect>": <int 1-4> } } } }`.
+            Use `"n/a"` as the `<Type>` key for CVAT labels with no
+            real subtype.
+        version:
+          type: integer
+        isActive:
+          type: boolean
+
+    DefectEvidence:
+      type: object
+      required: [id, defectId, reviewUncertain, deletedAt, createdAt]
+      description: |
+        Per-CVAT-shape evidence row tied to a Defect (merged defect).
+        Multiple rows for the same Defect mean the same defect was
+        annotated across multiple photos. Returned from the API only when
+        explicitly expanded.
+      properties:
+        id:
+          type: string
+          format: uuid
+        defectId:
+          type: string
+          format: uuid
+        cvatShapeUid:
+          type: string
+          nullable: true
+          description: "Stable id `<cvat_task_id>:<cvat_shape_id>` of the source CVAT shape. NULL on non-CVAT-sourced rows (none today)."
+        evidenceMediaId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Original (uncropped) mission_media row that the lineman annotated."
+        bbox:
+          type: object
+          nullable: true
+          description: 'Bounding box in evidence_media_id pixel coordinates: {"x1": int, "y1": int, "x2": int, "y2": int}.'
+        description:
+          type: string
+          nullable: true
+          description: "Free-form text the lineman attached to this specific CVAT shape (Comment attribute on regular labels, Description on the Other catch-all)."
+        reviewUncertain:
+          type: boolean
+          description: "True when this shipped evidence crop came from QA consensus=agreed_uncertain. The customer platform rolls this up to an Uncertain tag on the merged defect."
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+
+    SiteInspection:
+      type: object
+      required: [id, organizationId, siteId, missionId, status, deletedAt, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        siteId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - planned
+            - capture-pending
+            - capture-submitted
+            - capture-verified
+            - capture-failed
+            - analysis-pending
+            - analysis-submitted
+            - analysis-verified
+            - analysis-failed
+            - delivered
+          description: >-
+            FSM lifecycle state of this inspection (see the inspections
+            consolidation state machine). Defaults to `planned`. Not yet
+            transitioned by writers in this release.
+        status_metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Failure details, legacy provenance, or not-capturable kind; null unless set.
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        not_capturable:
+          type: boolean
+          description: >-
+            True only for synthesized "not capturable" placeholder rows
+            returned when `includeUncapturable=true` (the site is tagged
+            `inaccessible` and no media was captured); these have no
+            backing site_inspections row (the id reuses the site id, so
+            do not refetch via GET /inspections/{id}). Absent/false for
+            real inspections.
+
+    AssetInspection:
+      type: object
+      required: [id, organizationId, assetId, missionId, siteInspectionId, deletedAt, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        assetId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        siteInspectionId:
+          type: string
+          format: uuid
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+
+    Event:
+      type: object
+      required: [id, organizationId, transactionId, resourceType, resourceId, resourceIds, resourceName, action, actorId, actorType, actorName, actorRoleName, actorIsSuperAdmin, timestamp, before, after]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        resourceType:
+          $ref: '#/components/schemas/EventResourceType'
+        resourceId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Single resource; null for bulk events
+        resourceIds:
+          type: array
+          nullable: true
+          items:
+            type: string
+            format: uuid
+          description: Bulk events; null for single-resource events
+        resourceName:
+          type: string
+        action:
+          $ref: '#/components/schemas/EventActionType'
+        actorId:
+          type: string
+          format: uuid
+        actorType:
+          type: string
+          enum: [user, api_key, system]
+          nullable: true
+          description: Type of the actor (resolved at read time). Null if the actor row is not visible under the current org RLS scope (e.g. a Voltair super admin who has since switched to a different organization).
+        actorName:
+          type: string
+          nullable: true
+          description: "Display name for the actor: 'first last' for users, api_key name for api_keys, 'System' for system actors. Null when the actor row is not resolvable."
+        actorRoleName:
+          type: string
+          nullable: true
+          description: Name of the actor's role (e.g. 'Admin', 'Super Admin'). Null when the role row is not resolvable.
+        actorIsSuperAdmin:
+          type: boolean
+          nullable: true
+          description: True when the actor's role slug is 'super-admin'. Used by the UI to render 'Voltair Admin' instead of the underlying user's name.
+        timestamp:
+          type: number
+        before:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: "Null for create; delta for update; full row for delete"
+        after:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: "Full row for create; delta for update; null for delete"
+
+    Transaction:
+      type: object
+      required: [id, organizationId, actorId, description, method, endpoint, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        actorId:
+          type: string
+          format: uuid
+        description:
+          type: string
+        method:
+          type: string
+        endpoint:
+          type: string
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        idempotencyKey:
+          type: string
+        undoOfTransactionId:
+          type: string
+          format: uuid
+          description: If this IS an undo, points to the original transaction
+        undoneByTransactionId:
+          type: string
+          format: uuid
+          description: If this WAS undone, points to the undo transaction
+        createdAt:
+          type: number
+
+    ApiKey:
+      type: object
+      required: [id, actorId, name, prefix, createdBy, deletedAt, createdAt, lastUsedAt, expiresAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        actorId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        prefix:
+          type: string
+          description: 'First 12 characters, safe to display (e.g. "sk_live_a1b2")'
+        createdBy:
+          type: string
+          format: uuid
+          description: User ID of the creator
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+        lastUsedAt:
+          type: number
+          nullable: true
+        expiresAt:
+          type: number
+          nullable: true
+
+    ApiKeyWithRawKey:
+      description: API key returned on creation, including the raw key shown only once
+      allOf:
+        - $ref: '#/components/schemas/ApiKey'
+        - type: object
+          required: [rawKey]
+          properties:
+            rawKey:
+              type: string
+              description: The raw API key; returned only on creation and cannot be retrieved again
+
+    Webhook:
+      type: object
+      required: [id, organizationId, url, secret, events, enabled, deletedAt, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        url:
+          type: string
+        secret:
+          type: string
+          description: HMAC-SHA256 signing secret
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEvent'
+        enabled:
+          type: boolean
+        deletedAt:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+
+    WebhookDelivery:
+      type: object
+      required: [id, organizationId, webhookId, event, timestamp, statusCode, responseTimeMs, error]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        webhookId:
+          type: string
+          format: uuid
+        event:
+          $ref: '#/components/schemas/WebhookEvent'
+        timestamp:
+          type: number
+        statusCode:
+          type: integer
+          nullable: true
+        responseTimeMs:
+          type: integer
+          nullable: true
+        error:
+          type: string
+          nullable: true
+
+    # -------------------------------------------------------
+    # Request bodies
+    # -------------------------------------------------------
+    UpdateOrganizationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        logoUrl:
+          type: string
+        contactEmail:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
+
+    CreateRoleRequest:
+      type: object
+      required: [name, permissions]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+
+    UpdateRoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+
+    CreateUserRequest:
+      type: object
+      required: [firstName, lastName, email, roleId]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        roleId:
+          type: string
+          format: uuid
+        phone:
+          type: string
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        avatarUrl:
+          type: string
+        roleId:
+          type: string
+          format: uuid
+
+    CreateSiteRequest:
+      type: object
+      required: [name, siteType, geometry]
+      properties:
+        externalId:
+          type: string
+          description: Optional customer-facing identifier
+        name:
+          type: string
+        siteType:
+          $ref: '#/components/schemas/SiteType'
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        clusterId:
+          type: string
+          format: uuid
+        cameraOrientation:
+          $ref: '#/components/schemas/CameraOrientation'
+        geometry:
+          $ref: '#/components/schemas/SiteGeometry'
+        properties:
+          $ref: '#/components/schemas/SiteProperties'
+
+    UpdateSiteRequest:
+      type: object
+      properties:
+        externalId:
+          type: string
+          description: Optional customer-facing identifier
+        name:
+          type: string
+        siteType:
+          $ref: '#/components/schemas/SiteType'
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        clusterId:
+          type: string
+          format: uuid
+        cameraOrientation:
+          $ref: '#/components/schemas/CameraOrientation'
+        geometry:
+          $ref: '#/components/schemas/SiteGeometry'
+        properties:
+          $ref: '#/components/schemas/SiteProperties'
+
+    CreateClusterRequest:
+      type: object
+      required: [name, count, level, centroid, bounds, geometry]
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+        parentId:
+          type: string
+          format: uuid
+        level:
+          $ref: '#/components/schemas/ClusterLevel'
+        siteTypes:
+          type: array
+          items:
+            type: string
+        geometryCounts:
+          $ref: '#/components/schemas/GeometryCounts'
+        centroid:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+        bounds:
+          type: array
+          items:
+            type: number
+          minItems: 4
+          maxItems: 4
+        geometry:
+          $ref: '#/components/schemas/ClusterGeometry'
+
+    UpdateClusterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+        parentId:
+          type: string
+          format: uuid
+        level:
+          $ref: '#/components/schemas/ClusterLevel'
+        siteTypes:
+          type: array
+          items:
+            type: string
+        geometryCounts:
+          $ref: '#/components/schemas/GeometryCounts'
+        centroid:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+        bounds:
+          type: array
+          items:
+            type: number
+          minItems: 4
+          maxItems: 4
+        geometry:
+          $ref: '#/components/schemas/ClusterGeometry'
+
+    CreateMissionRequest:
+      type: object
+      required: [name, description, status, detailLevel, sensors, scheduledFor, estimatedCompletionTime, estimatedCost]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MissionStatus'
+        detailLevel:
+          $ref: '#/components/schemas/DetailLevel'
+        sensors:
+          $ref: '#/components/schemas/SensorRequirements'
+        scheduledFor:
+          type: number
+          description: Unix timestamp in milliseconds
+        estimatedCompletionTime:
+          type: number
+          description: Unix timestamp in milliseconds
+        dueDate:
+          type: number
+          description: Unix timestamp in milliseconds
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        estimatedCost:
+          type: number
+        siteGeometries:
+          type: array
+          items:
+            type: string
+            enum: [point, line, area]
+        siteIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Individual site IDs to include in the mission
+        clusterIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Cluster IDs; all sites in these clusters will be included
+
+    UpdateMissionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MissionStatus'
+        detailLevel:
+          $ref: '#/components/schemas/DetailLevel'
+        sensors:
+          $ref: '#/components/schemas/SensorRequirements'
+        scheduledFor:
+          type: number
+        estimatedCompletionTime:
+          type: number
+        dueDate:
+          type: number
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        estimatedCost:
+          type: number
+        siteGeometries:
+          type: array
+          items:
+            type: string
+            enum: [point, line, area]
+
+    MissionSitesRequest:
+      type: object
+      properties:
+        siteIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        clusterIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    CreateMediaCommentRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+
+    CreateMediaRequest:
+      type: object
+      required: [missionId, vehicleId, source, mediaType, capturedAt, sizeBytes]
+      properties:
+        missionId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        source:
+          type: string
+          description: Free-form tag describing how the media reached the API (e.g. "contractor-upload", "screenshot").
+        mediaType:
+          $ref: '#/components/schemas/MediaType'
+        capturedAt:
+          type: number
+          description: Unix-ms timestamp when the media was captured.
+        sizeBytes:
+          type: integer
+          description: Size of the S3 object in bytes (used by the zip endpoint's progress UI).
+        geoLocation:
+          allOf:
+            - $ref: '#/components/schemas/GeoLocation'
+          nullable: true
+
+    CreateMediaDownloadUrlRequest:
+      type: object
+      required: [missionId]
+      properties:
+        missionId:
+          type: string
+          format: uuid
+        siteId:
+          type: string
+          format: uuid
+          description: Optional — narrows the download to a single site.
+        mediaIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: |
+            Optional — narrows the download to a specific list of media rows.
+            When present, takes precedence over `siteId`.
+        includeEvidenceCrops:
+          type: boolean
+          description: |
+            Optional — opts the zip into the annotated evidence-crop pass
+            (mirrors `includeEvidenceCrops` on /media/download.zip). Folded
+            into the signed URL's HMAC claims.
+
+    CreateApiKeyRequest:
+      type: object
+      required: [name, roleId]
+      properties:
+        name:
+          type: string
+        roleId:
+          type: string
+          format: uuid
+        expiresAt:
+          type: number
+          description: Unix timestamp in milliseconds for key expiration
+
+    CreateWebhookRequest:
+      type: object
+      required: [url, events]
+      properties:
+        url:
+          type: string
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEvent'
+        enabled:
+          type: boolean
+
+    UpdateWebhookRequest:
+      type: object
+      properties:
+        url:
+          type: string
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEvent'
+        enabled:
+          type: boolean

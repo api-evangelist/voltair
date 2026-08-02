@@ -1,0 +1,70 @@
+generated: '2026-07-21'
+method: derived
+source: openapi/voltair-api-openapi-original.yml
+docs: https://api.voltairlabs.com/docs
+description: >-
+  Cross-cutting request/response semantics of the Voltair infrastructure
+  inspection platform API, derived from the provider's published OpenAPI 3.0.3
+  (https://api.voltairlabs.com/openapi.yaml). All endpoints are scoped to the
+  authenticated organization. All timestamps are Unix milliseconds since epoch
+  (UTC) in both requests and responses.
+authentication:
+  styles:
+    - type: http-bearer
+      scheme: BearerAuth
+      format: JWT
+      notes: Cognito-issued JWT access token
+    - type: api-key
+      scheme: ApiKeyAuth
+      header: X-API-Key
+      notes: Organization-scoped API key; keys are created via POST /api-keys, raw key shown once, display prefix is the first 12 characters (e.g. "sk_live_a1b2")
+  artifact: authentication/voltair-authentication.yml
+idempotency:
+  supported: true
+  header: Idempotency-Key
+  format: uuid
+  scope: POST requests (18 write operations declare the header, including createSite, createMission, createUser, createApiKey, undoTransaction)
+  retention: 48 hours
+  semantics: >-
+    If a transaction with the same key already exists for the organization,
+    the server returns the original response without re-executing.
+pagination:
+  style: cursor
+  request_params:
+    limit: page size (default 50, max 200)
+    cursor: opaque cursor from a previous response
+  response_fields:
+    meta.cursor: opaque cursor for the next page; null when no more results
+    meta.total: total matching results; included when cheaply computable
+response_envelope:
+  success: '{ data: <resource | resource[]>, meta?: PaginationMeta, transactionId?: uuid }'
+  notes: Mutating responses include a transactionId (uuid) referencing the transaction log.
+error_envelope:
+  shape: '{ error: { code, message, details? } }'
+  content_type: application/json
+  artifact: errors/voltair-problem-types.yml
+request_tracing:
+  header: X-Request-Id
+  format: uuid
+  notes: Returned on every documented response.
+rate_limiting:
+  signaled: true
+  headers: [X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After]
+  throttle_status: 429
+  artifact: rate-limits/voltair-rate-limits.yml
+versioning:
+  scheme: none-published
+  artifact: lifecycle/voltair-lifecycle.yml
+timestamps:
+  representation: Unix milliseconds since epoch (UTC)
+  fields: [createdAt, updatedAt, scheduledFor, capturedAt, expiresAt, deletedAt]
+soft_delete:
+  notes: Resources carry deletedAt (nullable) — deletion is soft and surfaced in the schema.
+audit_and_undo:
+  events: GET /events — full audit log with actor, before/after deltas per resource
+  transactions: GET /transactions + POST /transactions/{transactionId}/undo — mutations are recorded and reversible
+webhooks:
+  artifact: asyncapi/voltair-webhooks.yml
+field_expansion:
+  supported: false
+  notes: No expand/sparse-field parameters documented; mediaSource[] filter exists on expanded media rows in visit responses.

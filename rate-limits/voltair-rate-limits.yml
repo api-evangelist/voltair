@@ -1,0 +1,32 @@
+specification: API Commons Rate Limits
+specificationVersion: '0.1'
+schema: https://raw.githubusercontent.com/api-evangelist/interface-research/main/schema/api-commons.yml#/$defs/RateLimits
+provider: Voltair
+providerId: voltair
+generated: '2026-07-21'
+method: derived
+created: '2026-07-21'
+modified: '2026-07-21'
+tags:
+  - Rate Limiting
+  - Drones
+  - Infrastructure Inspection
+description: >-
+  Voltair enforces rate limiting (429 Too Many Requests) and signals window
+  state via standard headers, per the published OpenAPI. Numeric limits are
+  not published anywhere as of 2026-07-21 — only the signaling contract is
+  documented, so no limit counts are recorded here.
+sources:
+  - https://api.voltairlabs.com/openapi.yaml
+headers:
+  requestId: X-Request-Id
+  limit: X-RateLimit-Limit
+  remaining: X-RateLimit-Remaining
+  reset: X-RateLimit-Reset
+  retryAfter: Retry-After
+responseCodes:
+  throttled: 429
+notes:
+  - X-RateLimit-Reset is a Unix timestamp in milliseconds when the window resets.
+  - Retry-After gives seconds until the next rate limit window.
+limits: []

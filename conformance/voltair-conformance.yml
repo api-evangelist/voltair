@@ -1,0 +1,60 @@
+generated: '2026-07-21'
+method: derived
+source: openapi/voltair-api-openapi-original.yml
+description: >-
+  Cross-cutting standards conformance derived from the published Voltair
+  OpenAPI (https://api.voltairlabs.com/openapi.yaml). Voltair publishes no
+  compliance/certification program page as of 2026-07-21, so these are
+  spec-derived assertions only.
+standards:
+  - id: oauth2
+    conforms: false
+    evidence: no oauth2 securityScheme; auth is Cognito-issued Bearer JWT (http bearer) plus X-API-Key apiKey scheme
+  - id: oidc
+    conforms: false
+    evidence: no openIdConnect securityScheme; /.well-known/openid-configuration returns 404 on both hosts
+  - id: http-bearer-jwt
+    conforms: true
+    evidence: securitySchemes.BearerAuth type http scheme bearer bearerFormat JWT (Cognito access token)
+  - id: api-key-header
+    conforms: true
+    evidence: securitySchemes.ApiKeyAuth type apiKey in header name X-API-Key, organization-scoped
+  - id: rfc9457-problem-details
+    conforms: false
+    evidence: errors use a custom application/json envelope {error:{code,message,details}}, not application/problem+json
+  - id: pagination
+    conforms: true
+    evidence: cursor pagination on list operations — LimitParam (default 50, max 200) + CursorParam, PaginationMeta {cursor,total} in responses
+  - id: idempotency
+    conforms: true
+    evidence: IdempotencyKeyHeader (Idempotency-Key, uuid) on 18 write operations; duplicate keys replay the original response; keys valid 48 hours
+  - id: rate-limit-headers
+    conforms: true
+    evidence: 429 TooManyRequests documents X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset and Retry-After headers
+  - id: request-id-tracing
+    conforms: true
+    evidence: X-Request-Id (uuid) response header documented on every response via components.headers.XRequestId
+  - id: webhook-signing
+    conforms: true
+    evidence: Webhook.secret documented as HMAC-SHA256 signing secret; rotate-secret and test endpoints published
+  - id: geojson
+    conforms: true
+    evidence: Point/LineString/Polygon/MultiLineString geometry schemas follow GeoJSON geometry shapes for sites and clusters
+  - id: json-api
+    conforms: false
+    evidence: responses use a plain {data, meta} envelope, not JSON:API media type
+  - id: scim
+    conforms: false
+    evidence: user management is proprietary (/users), no SCIM 2.0 paths
+  - id: odata
+    conforms: false
+    evidence: no OData conventions present
+  - id: fhir
+    conforms: false
+    evidence: not a healthcare API
+  - id: fapi
+    conforms: false
+    evidence: not a financial-grade API profile
+  - id: psd2
+    conforms: false
+    evidence: not a payments API

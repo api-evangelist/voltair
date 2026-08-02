@@ -1,0 +1,24 @@
+generated: '2026-07-21'
+method: derived
+source: openapi/voltair-api-openapi-original.yml
+summary:
+  types:
+  - apiKey
+  - http
+  api_key_in:
+  - header
+schemes:
+- name: BearerAuth
+  type: http
+  scheme: bearer
+  bearerFormat: JWT
+  description: Cognito JWT access token
+  sources:
+  - openapi/voltair-api-openapi-original.yml
+- name: ApiKeyAuth
+  type: apiKey
+  in: header
+  parameter: X-API-Key
+  description: Organization-scoped API key
+  sources:
+  - openapi/voltair-api-openapi-original.yml

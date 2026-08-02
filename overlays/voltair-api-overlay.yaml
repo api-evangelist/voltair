@@ -1,0 +1,41 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for the Voltair API
+  version: 1.0.0
+extends: openapi/voltair-api-openapi-original.yml
+x-generated: '2026-07-21'
+x-method: generated
+actions:
+  - target: $.info
+    description: Catalog identity and provenance extensions.
+    update:
+      x-apievangelist:
+        provider: voltair
+        harvested: '2026-07-21'
+        source: https://api.voltairlabs.com/openapi.yaml
+        catalog: https://raw.githubusercontent.com/api-evangelist/voltair/refs/heads/main/apis.yml
+      contact:
+        name: Voltair
+        url: https://voltairlabs.com
+        email: info@voltairlabs.com
+  - target: $.servers
+    description: >-
+      The published spec declares a relative server (url: /). Pin the
+      production host the spec is served from so generated clients resolve
+      correctly.
+    update:
+      - url: https://api.voltairlabs.com
+        description: Voltair production API
+  - target: $.info
+    description: >-
+      Cross-cutting semantics captured in this repo's artifacts: Idempotency-Key
+      on POST (48h retention), cursor pagination (limit/cursor + data/meta
+      envelope), X-Request-Id tracing, X-RateLimit-* + Retry-After signaling,
+      error envelope {error:{code,message,details}}.
+    update:
+      x-artifacts:
+        conventions: conventions/voltair-conventions.yml
+        errors: errors/voltair-problem-types.yml
+        webhooks: asyncapi/voltair-webhooks.yml
+        authentication: authentication/voltair-authentication.yml
+        data-model: data-model/voltair-data-model.yml

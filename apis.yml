@@ -1,22 +1,324 @@
 aid: voltair
 name: Voltair
-description: Voltair is a company surfaced as a portfolio company of y-combinator and added to the API
-  Evangelist network as a stub for enrichment. This profile is a lead awaiting the enrichment pipeline.
+description: >-
+  Voltair (Y Combinator W26, San Francisco) is building a globally distributed
+  network of autonomous drones for Earth observation, starting with power
+  utilities. Its long-range, weatherized Faraday-1 aircraft recharge on
+  Lighthouse-1 pads installed at utility substations and capture
+  high-resolution RGB, radiometric thermal, and LiDAR data for asset
+  inspection, LiDAR corridor mapping, post-storm damage assessment, and rapid
+  fault localization. The Voltair API is an organization-scoped infrastructure
+  inspection platform covering sites, assets, defects, clusters, missions,
+  visits, media, inspections, an audit/undo transaction log, API keys, and
+  signed webhooks.
 url: https://raw.githubusercontent.com/api-evangelist/voltair/refs/heads/main/apis.yml
+accessModel:
+  pricing: unknown
+  onboarding: self-serve
+  trial: false
+  try_now: false
+  public: false
+  label: Self-serve signup
+  confidence: medium
+  source:
+  - authentication
+  generated: '2026-07-22'
+  method: derived
+image: https://avatars.githubusercontent.com/u/203074429
 x-type: company
 x-source: vc-portfolio
 x-backed-by:
 - y-combinator
-x-tier: stub
-x-tier-reason: portfolio-lead
+x-tier: enriched
+x-tier-reason: published-api
 specificationVersion: '0.20'
 created: '2026-07-17'
-modified: '2026-07-17'
+modified: '2026-07-21'
 tags:
-- Company
-apis: []
+- Drones
+- Earth Observation
+- Infrastructure Inspection
+- Utilities
+- Energy
+- Robotics
+- LiDAR
+- Aerial Imagery
+apis:
+- aid: voltair:voltair-apikeys-api
+  name: Voltair ApiKeys API
+  description: The ApiKeys API from Voltair — 2 operation(s) for apikeys.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - ApiKeys
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-apikeys-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-assets-api
+  name: Voltair Assets API
+  description: The Assets API from Voltair — 6 operation(s) for assets.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Assets
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-assets-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-clusters-api
+  name: Voltair Clusters API
+  description: The Clusters API from Voltair — 3 operation(s) for clusters.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Clusters
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-clusters-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-clustervisits-api
+  name: Voltair ClusterVisits API
+  description: The ClusterVisits API from Voltair — 2 operation(s) for clustervisits.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - ClusterVisits
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-clustervisits-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-events-api
+  name: Voltair Events API
+  description: The Events API from Voltair — 2 operation(s) for events.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Events
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-events-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-identity-api
+  name: Voltair Identity API
+  description: The Identity API from Voltair — 1 operation(s) for identity.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Identity
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-identity-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-inspections-api
+  name: Voltair Inspections API
+  description: The Inspections API from Voltair — 4 operation(s) for inspections.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Inspections
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-inspections-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-media-api
+  name: Voltair Media API
+  description: The Media API from Voltair — 7 operation(s) for media.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Media
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-media-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-missions-api
+  name: Voltair Missions API
+  description: The Missions API from Voltair — 3 operation(s) for missions.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Missions
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-missions-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-organization-api
+  name: Voltair Organization API
+  description: The Organization API from Voltair — 1 operation(s) for organization.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Organization
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-organization-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-roles-api
+  name: Voltair Roles API
+  description: The Roles API from Voltair — 2 operation(s) for roles.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Roles
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-roles-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-sites-api
+  name: Voltair Sites API
+  description: The Sites API from Voltair — 3 operation(s) for sites.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Sites
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-sites-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-sitevisits-api
+  name: Voltair SiteVisits API
+  description: The SiteVisits API from Voltair — 2 operation(s) for sitevisits.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - SiteVisits
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-sitevisits-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-transactions-api
+  name: Voltair Transactions API
+  description: The Transactions API from Voltair — 3 operation(s) for transactions.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Transactions
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-transactions-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-users-api
+  name: Voltair Users API
+  description: The Users API from Voltair — 5 operation(s) for users.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Users
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-users-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-webhooks-api
+  name: Voltair Webhooks API
+  description: The Webhooks API from Voltair — 5 operation(s) for webhooks.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - Webhooks
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-webhooks-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
+common:
+- type: DomainSecurity
+  url: security/voltair-domain-security.yml
+- type: Website
+  url: https://voltairlabs.com
+- type: Documentation
+  url: https://api.voltairlabs.com/docs
+- type: APIReference
+  url: https://api.voltairlabs.com/docs
+- type: GitHubOrganization
+  url: https://github.com/VoltairLabs
+- type: LinkedIn
+  url: https://www.linkedin.com/company/voltairlabs/
+- type: Authentication
+  url: authentication/voltair-authentication.yml
+- type: Conventions
+  url: conventions/voltair-conventions.yml
+- type: Idempotency
+  url: conventions/voltair-conventions.yml
+- type: RateLimits
+  url: rate-limits/voltair-rate-limits.yml
+- type: ErrorCatalog
+  url: errors/voltair-problem-types.yml
+- type: Webhooks
+  url: asyncapi/voltair-webhooks.yml
+- type: Lifecycle
+  url: lifecycle/voltair-lifecycle.yml
+- type: Conformance
+  url: conformance/voltair-conformance.yml
+- type: DataModel
+  url: data-model/voltair-data-model.yml
+- type: MCPServer
+  url: mcp/voltair-mcp.yml
+- type: LLMsTxt
+  url: llms/voltair-llms.txt
+- type: AgentSkill
+  name: Plan and schedule a Voltair inspection mission
+  url: skills/voltair-plan-inspection-mission.md
+- type: AgentSkill
+  name: Retrieve Voltair inspection results, defects, and media
+  url: skills/voltair-retrieve-inspection-results.md
+- type: AgentSkill
+  name: Operate Voltair webhooks and API keys safely
+  url: skills/voltair-manage-webhooks-and-keys.md
+x-enrichment:
+  date: '2026-07-21'
+  status: enriched
+  artifacts_added: 18
+  pass: local-v1
