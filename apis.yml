@@ -274,6 +274,8 @@ maintainers:
 - FN: APIs.json
   email: info@apis.io
 common:
+- type: Overlay
+  url: overlays/voltair-api-overlay.yaml
 - type: DomainSecurity
   url: security/voltair-domain-security.yml
 - type: Website
