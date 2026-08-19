@@ -1,0 +1,189 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Voltair ApiKeys Assets API",
+    "version": "0.1.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Assets",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List assets",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/assets",
+            "params": [
+              {
+                "name": "siteId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "priority",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated priorities (high, medium, low, none)"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "Lists assets filtered by `siteId` (required). RLS confines results\nto the caller's organization.\n"
+        },
+        {
+          "info": {
+            "name": "Get asset",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/assets/:assetId",
+            "params": [
+              {
+                "name": "assetId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get asset"
+        },
+        {
+          "info": {
+            "name": "List defects for an asset",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/defects",
+            "params": [
+              {
+                "name": "assetId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "Lists defects filtered by `assetId` (required). RLS confines\nresults to the caller's organization.\n"
+        },
+        {
+          "info": {
+            "name": "Update a defect",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "/defects/:defectId",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "defectId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Partial update of one or more mutable fields:\n  * `workDoneAt` -- Unix ms to mark the defect as addressed,\n    null to clear the mark (undo).\n  * `defectPriority` -- 1..4. Sending this field always sets\n    `prioritySource='manual'` so a subsequent bulk schema edit\n    cannot overwrite the reviewer's decision. May be sent\n    standalone; sending `prioritySource: 'manual'` alongside\n    is allowed but redundant.\n  * `prioritySource: 'mapping'` (alone, without\n    `defectPriority`) -- revert path."
+        },
+        {
+          "info": {
+            "name": "Bulk-update defect priority for a single (assetType, defectName) tuple",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/defects:bulk-priority",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Remaps every existing defect row in the caller's organization\nwhose `(assetType, defectName)` matches the request to a new\npriority. Optionally also rewrites the org's active\n`defect_priority_mapping` so future CVAT exports use the new\nvalue as the schema-derived default.\n\nReviewer manual overrides are NEVER touched -- the bulk UPDATE\nfilters by `priority_source='mapping'`. CVAT \"Other\" catch-all rows\n(`priority_source='cvat_other_defect'`) are also excluded.\n\nAt least one of `applyToExisting` o"
+        },
+        {
+          "info": {
+            "name": "Get the active defect priority mapping for the caller's organization",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/defect-priority-mapping"
+          },
+          "docs": "Returns the active row from `app.defect_priority_mappings` (a\nper-org JSONB schema mapping `(Equipment, Type, Defect)` to\n`(asset_type, priority)`). 404 when none exists; the org must be\nseeded via the admin API before customer-facing edits are allowed.\n\nPermission: `defects:read`.\n"
+        },
+        {
+          "info": {
+            "name": "Replace the active defect priority mapping (priority values only)",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "/defect-priority-mapping",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Versioned write: deactivates the prior active row and inserts a\nnew one with `version+1`. Customer-facing edits are LIMITED TO\npriority values: the `(Equipment, Type, Defect)` keyset is\nimmutable from this endpoint. Adding or removing keys requires a\nsuper-admin re-import via the admin API after the CVAT project\nschema is updated -- 409 with `code='schema_keys_immutable'`\nwhen the request would change the keyset.\n\nOptional `applyToExisting` (default false) bulk-rewrites every\nexisting defect row"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

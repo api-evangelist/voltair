@@ -1,0 +1,72 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Voltair ApiKeys ClusterVisits API",
+    "version": "0.1.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "ClusterVisits",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List cluster visits for a mission",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/cluster-visits",
+            "params": [
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "List cluster visits for a mission"
+        },
+        {
+          "info": {
+            "name": "Get cluster visit",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/cluster-visits/:clusterVisitId",
+            "params": [
+              {
+                "name": "clusterVisitId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get cluster visit"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

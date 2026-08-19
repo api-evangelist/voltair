@@ -1,0 +1,224 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Voltair ApiKeys Inspections API",
+    "version": "0.1.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Inspections",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List site inspections",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/inspections",
+            "params": [
+              {
+                "name": "siteId",
+                "value": "",
+                "type": "query",
+                "description": "Restrict to inspections for a single site."
+              },
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "query",
+                "description": "Restrict to inspections for a single mission."
+              },
+              {
+                "name": "assetId",
+                "value": "",
+                "type": "query",
+                "description": "Restrict to inspections that contain at least one asset inspection for this asset."
+              },
+              {
+                "name": "hasComments",
+                "value": "",
+                "type": "query",
+                "description": "When `true`, restrict to inspections that have at least one comment on any associated media (site-level via `site_inspection_media`, or asset-level via the site's `asset_inspections`). Any other value is treated as absent."
+              },
+              {
+                "name": "siteName",
+                "value": "",
+                "type": "query",
+                "description": "Case-insensitive substring match (ILIKE) on the joined site's `name`. Pass plain text; the server wraps it with `%` on both sides."
+              },
+              {
+                "name": "siteType[]",
+                "value": "",
+                "type": "query",
+                "description": "Repeating allowlist on the joined site's `site_type`. Empty/absent means any."
+              },
+              {
+                "name": "geometryType[]",
+                "value": "",
+                "type": "query",
+                "description": "Repeating GeoJSON geometry-type allowlist on the joined site's geometry (mapped to `ST_GeometryType` internally). Empty/absent means any."
+              },
+              {
+                "name": "priority[]",
+                "value": "",
+                "type": "query",
+                "description": "Repeating allowlist on the denormalized `sites.priority` column (`none` also matches a NULL priority). Empty/absent means any."
+              },
+              {
+                "name": "resolution[]",
+                "value": "",
+                "type": "query",
+                "description": "Repeating allowlist bucketing each site inspection by its defects' `workDoneAt` flags: `all_resolved` (every defect resolved), `some_resolved` (a mix), `none_resolved` (at least one defect, none resolved). Site inspections with zero defects match no bucket and are excluded when this filter is active."
+              },
+              {
+                "name": "review[]",
+                "value": "",
+                "type": "query",
+                "description": "Repeating allowlist bucketing each site inspection by its defects' `reviewedAt` flags: `all_reviewed` (every defect reviewed), `some_reviewed` (a mix), `none_reviewed` (at least one defect, none reviewed). Site inspections with zero defects match no bucket and are excluded when this filter is active."
+              },
+              {
+                "name": "includeUncapturable",
+                "value": "",
+                "type": "query",
+                "description": "When `true`, additionally returns synthesized placeholder SiteInspection rows for mission sites tagged `inaccessible` that have no persisted inspection (no media was captured). Requires `missionId`; sending it without `missionId` is a `400`. Placeholder rows carry `not_capturable: true`, reuse the site's id, and expand a `site` whose `tags` include `inaccessible`. They pass through the same filters and pagination as real rows."
+              },
+              {
+                "name": "mediaSource[]",
+                "value": "",
+                "type": "query",
+                "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "Returns SiteInspection records for the caller's organization. All filter parameters are optional; row-level security confines results to the caller's organization."
+        },
+        {
+          "info": {
+            "name": "Get a site inspection by id",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/inspections/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "mediaSource[]",
+                "value": "",
+                "type": "query",
+                "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+              }
+            ]
+          },
+          "docs": "Get a site inspection by id"
+        },
+        {
+          "info": {
+            "name": "List asset inspections",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/asset-inspections",
+            "params": [
+              {
+                "name": "siteInspectionId",
+                "value": "",
+                "type": "query",
+                "description": "Restrict to asset inspections within a single site inspection."
+              },
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "query",
+                "description": "Restrict to asset inspections for a single mission."
+              },
+              {
+                "name": "siteId",
+                "value": "",
+                "type": "query",
+                "description": "Restrict to asset inspections whose parent site inspection belongs to this site."
+              },
+              {
+                "name": "assetId",
+                "value": "",
+                "type": "query",
+                "description": "Restrict to asset inspections for a single asset."
+              },
+              {
+                "name": "mediaSource[]",
+                "value": "",
+                "type": "query",
+                "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "Returns AssetInspection records for the caller's organization. All filters are optional; row-level security confines results to the caller's organization."
+        },
+        {
+          "info": {
+            "name": "Get an asset inspection by id",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/asset-inspections/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "mediaSource[]",
+                "value": "",
+                "type": "query",
+                "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+              }
+            ]
+          },
+          "docs": "Get an asset inspection by id"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

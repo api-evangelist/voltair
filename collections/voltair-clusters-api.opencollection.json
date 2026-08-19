@@ -1,0 +1,160 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Voltair ApiKeys Clusters API",
+    "version": "0.1.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Clusters",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List clusters",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/clusters",
+            "params": [
+              {
+                "name": "siteId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "bounds",
+                "value": "",
+                "type": "query",
+                "description": "Bounding box: minLng,minLat,maxLng,maxLat"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "List clusters"
+        },
+        {
+          "info": {
+            "name": "Create cluster",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/clusters",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Create cluster"
+        },
+        {
+          "info": {
+            "name": "Bulk create clusters",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/clusters/bulk",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Bulk create clusters"
+        },
+        {
+          "info": {
+            "name": "Get cluster",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/clusters/:clusterId",
+            "params": [
+              {
+                "name": "clusterId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get cluster"
+        },
+        {
+          "info": {
+            "name": "Update cluster",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "/clusters/:clusterId",
+            "params": [
+              {
+                "name": "clusterId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Updates a cluster. Cannot edit id or organizationId."
+        },
+        {
+          "info": {
+            "name": "Delete cluster",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "/clusters/:clusterId",
+            "params": [
+              {
+                "name": "clusterId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Soft-deletes a cluster. Sites in the cluster retain their clusterId but the cluster is hidden from queries."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

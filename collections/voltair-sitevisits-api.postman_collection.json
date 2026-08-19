@@ -1,0 +1,1068 @@
+{
+  "item": [
+    {
+      "id": "d93b2c4d-0c9f-405d-aa34-24f99be708f9",
+      "name": "SiteVisits",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "f60de39b-23d6-43ab-9439-e39626cc5453",
+          "name": "List site visits for a mission",
+          "request": {
+            "name": "List site visits for a mission",
+            "description": {
+              "content": "Returns site visits for the given mission. When `compress=true`, returns\na mixed array of the highest-level ClusterVisit and unclustered SiteVisit\nobjects instead of the paginated list. Each item in the compressed\nresponse includes a `type` discriminator field (`\"clusterVisit\"` or\n`\"siteVisit\"`).\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "site-visits"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "missionId",
+                  "value": "<uuid>",
+                  "description": "(Required) "
+                },
+                {
+                  "disabled": false,
+                  "key": "compress",
+                  "value": "<boolean>",
+                  "description": "When true, returns a compressed representation: a mixed array of the highest-level ClusterVisit objects (whose parent cluster has no ClusterVisit in this mission) and unclustered SiteVisit objects. Pagination parameters are ignored when compress=true.\n"
+                },
+                {
+                  "disabled": false,
+                  "key": "unclustered",
+                  "value": "<boolean>",
+                  "description": "When true, returns only visits where clusterVisitId is null"
+                },
+                {
+                  "disabled": false,
+                  "key": "status",
+                  "value": "<string>",
+                  "description": "Comma-separated statuses"
+                },
+                {
+                  "disabled": false,
+                  "key": "limit",
+                  "value": "<integer>",
+                  "description": "Page size (default 50, max 200)"
+                },
+                {
+                  "disabled": false,
+                  "key": "cursor",
+                  "value": "<string>",
+                  "description": "Opaque pagination cursor from a previous response"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "92f37f6c-563d-4efa-a5b6-39bc7939b8c5",
+              "name": "Success",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "compress",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "unclustered",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "status",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"dd37a792-25c9-3c84-dcd9-0a416d747e29\",\n      \"organizationId\": \"364b936e-9c8c-aa3b-107a-4059e8485f97\",\n      \"missionId\": \"9b66db79-bdb3-ae61-d4ec-2a308383572b\",\n      \"siteId\": \"a088889b-3b4d-b4d0-6eb4-9e3423bc596c\",\n      \"clusterVisitId\": \"1cc50ece-7b19-6a57-a25a-2a1c5632e08d\",\n      \"status\": \"skipped\",\n      \"completedAt\": 2685.0362472298993,\n      \"recaptureReason\": \"string\",\n      \"recaptureRequestedBy\": \"b6a088b1-1286-2f4d-51b1-ac657787cde3\",\n      \"recaptureRequestedAt\": 4446.88502486575,\n      \"deletedAt\": 9408.590008751577,\n      \"createdAt\": 95.99148912582956\n    },\n    {\n      \"id\": \"001b4f3a-6c72-b700-bf6a-f4ed6f30dc80\",\n      \"organizationId\": \"1502ea46-336f-6166-4376-d76743ff12d1\",\n      \"missionId\": \"bff70a2f-ea19-336e-5725-c34cbec786b5\",\n      \"siteId\": \"c5e75b68-f558-c69f-e558-a487155f73f6\",\n      \"clusterVisitId\": \"cfd348e6-0cd6-4474-9eba-916db50d5491\",\n      \"status\": \"skipped\",\n      \"completedAt\": 4727.360419598269,\n      \"recaptureReason\": \"string\",\n      \"recaptureRequestedBy\": \"f32b31c5-61d2-b99d-0924-158fea468da0\",\n      \"recaptureRequestedAt\": 6235.195506448077,\n      \"deletedAt\": 4631.027041355121,\n      \"createdAt\": 3477.178514121693\n    }\n  ],\n  \"meta\": {\n    \"cursor\": \"string\",\n    \"total\": 7588\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "ab432c8a-a4a4-4ec8-bd66-e8da38cf8a67",
+              "name": "Bad request or validation error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "compress",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "unclustered",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "status",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "a0d6c000-0010-4d86-b4a8-e5c3b982a7b0",
+              "name": "Authentication required",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "compress",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "unclustered",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "status",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "35dc30b6-ec9d-4ac2-9685-eb34ee2464c0",
+              "name": "Insufficient permissions",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "compress",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "unclustered",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "status",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "c2080873-5281-46d2-8f31-fd6946077283",
+              "name": "Resource not found",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "compress",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "unclustered",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "status",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "3663cff3-1195-437b-a708-681744ddf5ea",
+              "name": "Rate limit exceeded",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "compress",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "unclustered",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "status",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "disabled": false,
+                  "description": "Maximum requests per window",
+                  "key": "X-RateLimit-Limit",
+                  "value": "6471"
+                },
+                {
+                  "disabled": false,
+                  "description": "Requests remaining in current window",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "6471"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (ms) when the window resets",
+                  "key": "X-RateLimit-Reset",
+                  "value": "96.36949003063444"
+                },
+                {
+                  "disabled": false,
+                  "description": "Seconds until the next rate limit window",
+                  "key": "Retry-After",
+                  "value": "6471"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "ea9a4c14-1056-4614-bb87-425ebd14d71d",
+              "name": "Internal server error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "compress",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "unclustered",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "status",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "e7d1b1d1-01f9-4c6d-98a3-7aaee2d69882",
+          "name": "Get site visit",
+          "request": {
+            "name": "Get site visit",
+            "description": {},
+            "url": {
+              "path": [
+                "site-visits",
+                ":siteVisitId"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<uuid>",
+                  "key": "siteVisitId",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "4b58f3f7-fb23-4a58-9f14-a4938bb2597d",
+              "name": "Success",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits",
+                    ":siteVisitId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "siteVisitId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"d381c96d-86b0-ee46-6579-19a92878aed3\",\n    \"organizationId\": \"412e47dd-98bf-70a3-cebe-7380fb5658e1\",\n    \"missionId\": \"61fb550b-7ce3-07df-2bbd-b5c46bd934ce\",\n    \"siteId\": \"4b0f26c8-f426-dd9f-6a09-7ef2c87b9402\",\n    \"clusterVisitId\": \"ffa8c050-22b9-1fcf-b53e-3eefb81af5c8\",\n    \"status\": \"complete\",\n    \"completedAt\": 8456.745040473363,\n    \"recaptureReason\": \"string\",\n    \"recaptureRequestedBy\": \"5b6bf2c3-4bf0-7041-ca43-f988e9065ac9\",\n    \"recaptureRequestedAt\": 9839.889612974011,\n    \"deletedAt\": 2920.17934926031,\n    \"createdAt\": 1819.1284109169815\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "0c6b3839-21d0-4d4d-8355-f95bd48aaf78",
+              "name": "Authentication required",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits",
+                    ":siteVisitId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "siteVisitId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "6946c8ff-74ce-47e9-973c-4c1202c5df13",
+              "name": "Insufficient permissions",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits",
+                    ":siteVisitId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "siteVisitId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "94a7aae7-056e-4525-bc04-5de613176122",
+              "name": "Resource not found",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits",
+                    ":siteVisitId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "siteVisitId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "ca0da660-9fc6-47b5-8823-0e1009839e21",
+              "name": "Rate limit exceeded",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits",
+                    ":siteVisitId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "siteVisitId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "disabled": false,
+                  "description": "Maximum requests per window",
+                  "key": "X-RateLimit-Limit",
+                  "value": "6471"
+                },
+                {
+                  "disabled": false,
+                  "description": "Requests remaining in current window",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "6471"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (ms) when the window resets",
+                  "key": "X-RateLimit-Reset",
+                  "value": "96.36949003063444"
+                },
+                {
+                  "disabled": false,
+                  "description": "Seconds until the next rate limit window",
+                  "key": "Retry-After",
+                  "value": "6471"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "2eb5e2ac-05e0-4feb-8df4-7af951d61d47",
+              "name": "Internal server error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "site-visits",
+                    ":siteVisitId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "siteVisitId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "cf3c48af-4bee-a199-8bd5-e90a3923c6d8"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true,\n      \"key_1\": 3764.2503881125567\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "/",
+      "key": "baseUrl"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}"
+      }
+    ]
+  },
+  "info": {
+    "_postman_id": "bebf56d9-a925-45a8-a774-c25b740801f7",
+    "name": "Voltair ApiKeys SiteVisits API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.\nAll timestamp fields on this API (createdAt, updatedAt, scheduledFor, capturedAt, expiresAt, deletedAt, etc.) are Unix timestamps in milliseconds since the epoch (UTC). Both request and response bodies use this representation.",
+      "type": "text/plain"
+    }
+  }
+}

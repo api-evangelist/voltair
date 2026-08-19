@@ -1,0 +1,967 @@
+{
+  "item": [
+    {
+      "id": "0ed68128-7fd2-4dcb-9a05-c50806797577",
+      "name": "Events",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "6614061f-f02b-49d1-85b6-084254f02b30",
+          "name": "List events",
+          "request": {
+            "name": "List events",
+            "description": {},
+            "url": {
+              "path": [
+                "events"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "resourceType",
+                  "value": "<string>",
+                  "description": "Comma-separated resource types"
+                },
+                {
+                  "disabled": false,
+                  "key": "resourceId",
+                  "value": "<uuid>"
+                },
+                {
+                  "disabled": false,
+                  "key": "action",
+                  "value": "<string>",
+                  "description": "Comma-separated actions (create, update, delete)"
+                },
+                {
+                  "disabled": false,
+                  "key": "actorId",
+                  "value": "<uuid>"
+                },
+                {
+                  "disabled": false,
+                  "key": "after",
+                  "value": "<number>",
+                  "description": "Unix timestamp in milliseconds — events after this time"
+                },
+                {
+                  "disabled": false,
+                  "key": "before",
+                  "value": "<number>",
+                  "description": "Unix timestamp in milliseconds — events before this time"
+                },
+                {
+                  "disabled": false,
+                  "key": "limit",
+                  "value": "<integer>",
+                  "description": "Page size (default 50, max 200)"
+                },
+                {
+                  "disabled": false,
+                  "key": "cursor",
+                  "value": "<string>",
+                  "description": "Opaque pagination cursor from a previous response"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "42702b58-faac-41e6-828d-8b27e981e2d6",
+              "name": "Success",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "resourceType",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resourceId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "action",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "actorId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "after",
+                      "value": "<number>"
+                    },
+                    {
+                      "key": "before",
+                      "value": "<number>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"37074eed-f1b1-d904-0bf9-7871ff10d09b\",\n      \"organizationId\": \"575a2251-3c53-ebcb-ce10-27322fe7516a\",\n      \"transactionId\": \"9195f2ac-2b21-1e39-236d-c2b2e411841d\",\n      \"resourceType\": \"site_inspection\",\n      \"resourceId\": \"56a84527-1f97-6d34-f78d-6f45cdfb5aaf\",\n      \"resourceIds\": [\n        \"ef2f1865-5bd8-01d4-a19c-5bb094568208\",\n        \"c7c4e05b-a7fb-70f6-f057-5c1e55dc2a41\"\n      ],\n      \"resourceName\": \"string\",\n      \"action\": \"delete\",\n      \"actorId\": \"d0391ae3-fa66-46bd-e49b-88777ef6a460\",\n      \"actorType\": \"user\",\n      \"actorName\": \"string\",\n      \"actorRoleName\": \"string\",\n      \"actorIsSuperAdmin\": true,\n      \"timestamp\": 6393.711216405294,\n      \"before\": {\n        \"key_0\": false\n      },\n      \"after\": {\n        \"key_0\": 2980.2117218148437,\n        \"key_1\": \"string\"\n      }\n    },\n    {\n      \"id\": \"c32c5435-4e9b-dab3-2281-00708a57978a\",\n      \"organizationId\": \"8884d30d-6c66-8126-728b-8659d073c534\",\n      \"transactionId\": \"2ca53777-d4a8-8fc9-3399-739d6f2e005f\",\n      \"resourceType\": \"mission\",\n      \"resourceId\": \"be70d29b-5e96-4501-a194-05f3d9e120d3\",\n      \"resourceIds\": [\n        \"45fa4af0-5f6a-61cf-6fbd-a00158d4d472\",\n        \"09c1ba5e-11de-6c2f-be71-ed014adc2393\"\n      ],\n      \"resourceName\": \"string\",\n      \"action\": \"delete\",\n      \"actorId\": \"4e4cb6af-56fa-4641-22d1-ed860a3d7124\",\n      \"actorType\": \"system\",\n      \"actorName\": \"string\",\n      \"actorRoleName\": \"string\",\n      \"actorIsSuperAdmin\": false,\n      \"timestamp\": 693.6442630417938,\n      \"before\": {\n        \"key_0\": false\n      },\n      \"after\": {\n        \"key_0\": 6896.503333625248,\n        \"key_1\": 6049.041667048251\n      }\n    }\n  ],\n  \"meta\": {\n    \"cursor\": \"string\",\n    \"total\": 9791\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "aa3a2b9a-8c1c-4a46-8cf7-b3fd37a852cb",
+              "name": "Authentication required",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "resourceType",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resourceId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "action",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "actorId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "after",
+                      "value": "<number>"
+                    },
+                    {
+                      "key": "before",
+                      "value": "<number>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "385f1456-63b3-4892-990f-f875dbc9cdb1",
+              "name": "Insufficient permissions",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "resourceType",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resourceId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "action",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "actorId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "after",
+                      "value": "<number>"
+                    },
+                    {
+                      "key": "before",
+                      "value": "<number>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "c54dbd16-d048-4308-b842-af2f96815e60",
+              "name": "Rate limit exceeded",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "resourceType",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resourceId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "action",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "actorId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "after",
+                      "value": "<number>"
+                    },
+                    {
+                      "key": "before",
+                      "value": "<number>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "disabled": false,
+                  "description": "Maximum requests per window",
+                  "key": "X-RateLimit-Limit",
+                  "value": "6701"
+                },
+                {
+                  "disabled": false,
+                  "description": "Requests remaining in current window",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "6701"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (ms) when the window resets",
+                  "key": "X-RateLimit-Reset",
+                  "value": "3014.093143068527"
+                },
+                {
+                  "disabled": false,
+                  "description": "Seconds until the next rate limit window",
+                  "key": "Retry-After",
+                  "value": "6701"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "00e4bf30-a34e-40fa-b7b6-1810fc9dbaee",
+              "name": "Internal server error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "resourceType",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resourceId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "action",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "actorId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "after",
+                      "value": "<number>"
+                    },
+                    {
+                      "key": "before",
+                      "value": "<number>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "50c3df29-0c75-420f-a3f0-257a18af3681",
+          "name": "Get event",
+          "request": {
+            "name": "Get event",
+            "description": {},
+            "url": {
+              "path": [
+                "events",
+                ":eventId"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<uuid>",
+                  "key": "eventId",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "b44d1626-c4ae-4006-ab13-69c371de6fb2",
+              "name": "Success",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events",
+                    ":eventId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "eventId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"cdd1eccf-2aa9-5379-8bbc-c66423f23cbe\",\n    \"organizationId\": \"0fdd1a28-6cc2-f77d-6565-4f66b4438c1f\",\n    \"transactionId\": \"574ff89c-731d-0295-29f2-71c9836f01fb\",\n    \"resourceType\": \"cluster\",\n    \"resourceId\": \"3cd970b6-5952-f2ef-a57a-4030d2d00b1f\",\n    \"resourceIds\": [\n      \"da75b752-ec9b-4080-cd27-133bcd386c3b\",\n      \"219c21d4-aaa7-5fa9-2aad-a825769257b5\"\n    ],\n    \"resourceName\": \"string\",\n    \"action\": \"create\",\n    \"actorId\": \"2e426df5-bd51-2146-ee56-901c7a1e54d7\",\n    \"actorType\": \"api_key\",\n    \"actorName\": \"string\",\n    \"actorRoleName\": \"string\",\n    \"actorIsSuperAdmin\": false,\n    \"timestamp\": 9621.566362971114,\n    \"before\": {\n      \"key_0\": true,\n      \"key_1\": true\n    },\n    \"after\": {\n      \"key_0\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "47c3176f-852d-4d2d-8a33-b7381504d92e",
+              "name": "Authentication required",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events",
+                    ":eventId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "eventId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "fbf934f3-fd6b-49be-9d69-7eba3fa84961",
+              "name": "Insufficient permissions",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events",
+                    ":eventId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "eventId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "6e84adf8-2e4e-4bc1-a886-06cb203c809b",
+              "name": "Resource not found",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events",
+                    ":eventId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "eventId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "b26d5ce7-030c-4061-a1a4-92a0599c14c6",
+              "name": "Rate limit exceeded",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events",
+                    ":eventId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "eventId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "disabled": false,
+                  "description": "Maximum requests per window",
+                  "key": "X-RateLimit-Limit",
+                  "value": "6701"
+                },
+                {
+                  "disabled": false,
+                  "description": "Requests remaining in current window",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "6701"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (ms) when the window resets",
+                  "key": "X-RateLimit-Reset",
+                  "value": "3014.093143068527"
+                },
+                {
+                  "disabled": false,
+                  "description": "Seconds until the next rate limit window",
+                  "key": "Retry-After",
+                  "value": "6701"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "02ec6ad2-1a88-415a-bffe-33cb1bc1bcef",
+              "name": "Internal server error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "events",
+                    ":eventId"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "eventId",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "93d41e27-702f-f09f-fb9a-9b33a8f204a3"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": true\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "/",
+      "key": "baseUrl"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}"
+      }
+    ]
+  },
+  "info": {
+    "_postman_id": "c5f22899-b503-4e6a-9928-1ed6e871f15c",
+    "name": "Voltair ApiKeys Events API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.\nAll timestamp fields on this API (createdAt, updatedAt, scheduledFor, capturedAt, expiresAt, deletedAt, etc.) are Unix timestamps in milliseconds since the epoch (UTC). Both request and response bodies use this representation.",
+      "type": "text/plain"
+    }
+  }
+}

@@ -1,0 +1,272 @@
+{
+  "item": [
+    {
+      "id": "9e46c5ff-9e4a-443d-8277-0f2186c2f7c9",
+      "name": "Identity",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "16dd4861-8a3a-40fd-b358-3d73a21faee4",
+          "name": "Get authenticated caller",
+          "request": {
+            "name": "Get authenticated caller",
+            "description": {
+              "content": "Returns the user row, role row, and resolved permission list for the authenticated caller, derived from the auth context's own `auth_lookup_by_cognito_id`. Unlike `GET /users/{id}` and `GET /roles`, this endpoint is keyed to the JWT (not to the currently viewed organization), so it works for super-admins whose user/role rows live in the cluster-internal org but who are viewing a different tenant. Authenticated callers always have permission to read their own identity, so the route is not gated by a `Requires(...)` permission check.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "me"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "2b57636a-f370-4684-8158-6e58c027619b",
+              "name": "Success",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "me"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "2047dbe6-ab81-7787-81c6-9d4e68f457cb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"user\": {\n      \"id\": \"e435e15b-cda4-7771-5916-4e00573ada3b\",\n      \"actorId\": \"b30d4486-e443-caf6-1de8-6684d913db2c\",\n      \"cognitoId\": \"string\",\n      \"firstName\": \"string\",\n      \"lastName\": \"string\",\n      \"email\": \"string\",\n      \"status\": \"active\",\n      \"deletedAt\": 8025.324922318633,\n      \"createdAt\": 7785.067983233218,\n      \"updatedAt\": 8661.960406170829,\n      \"phone\": \"string\",\n      \"avatarUrl\": \"string\",\n      \"invitedAt\": 2234.8367882509333,\n      \"joinedAt\": 1278.891091922123\n    },\n    \"role\": {\n      \"id\": \"f2f7e64b-97d7-bbd8-6029-22cd7850c28a\",\n      \"name\": \"string\",\n      \"description\": \"string\",\n      \"permissions\": [\n        {\n          \"resource\": \"sites\",\n          \"level\": \"write\"\n        },\n        {\n          \"resource\": \"roles\",\n          \"level\": \"none\"\n        }\n      ],\n      \"isSystem\": true,\n      \"canSwitchOrganizations\": true,\n      \"deletedAt\": 7462.9543516724025,\n      \"createdAt\": 9772.552915032498,\n      \"updatedAt\": 6614.139207925997,\n      \"organizationId\": \"17439fd7-29fe-4dc4-207f-843ee96ea0df\",\n      \"slug\": \"string\"\n    },\n    \"permissions\": [\n      {\n        \"resource\": \"missions\",\n        \"level\": \"write\"\n      },\n      {\n        \"resource\": \"billing\",\n        \"level\": \"read\"\n      }\n    ]\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "95e7db32-3529-4ae8-9851-fa9c870e951c",
+              "name": "Authentication required",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "me"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "2047dbe6-ab81-7787-81c6-9d4e68f457cb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": 9327.584134458462,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "c31ce9eb-5098-465e-a65a-b245225237dd",
+              "name": "Resource not found",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "me"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "2047dbe6-ab81-7787-81c6-9d4e68f457cb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": 9327.584134458462,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "b2663d9d-2de2-412b-8cbf-2513e1bf9752",
+              "name": "Internal server error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "me"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "2047dbe6-ab81-7787-81c6-9d4e68f457cb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": 9327.584134458462,\n      \"key_1\": \"string\",\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "/",
+      "key": "baseUrl"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}"
+      }
+    ]
+  },
+  "info": {
+    "_postman_id": "ca09c751-2c78-400e-97d6-a85265a579f0",
+    "name": "Voltair ApiKeys Identity API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.\nAll timestamp fields on this API (createdAt, updatedAt, scheduledFor, capturedAt, expiresAt, deletedAt, etc.) are Unix timestamps in milliseconds since the epoch (UTC). Both request and response bodies use this representation.",
+      "type": "text/plain"
+    }
+  }
+}

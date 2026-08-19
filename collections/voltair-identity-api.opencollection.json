@@ -1,0 +1,35 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Voltair ApiKeys Identity API",
+    "version": "0.1.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Identity",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get authenticated caller",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/me"
+          },
+          "docs": "Returns the user row, role row, and resolved permission list for the authenticated caller, derived from the auth context's own `auth_lookup_by_cognito_id`. Unlike `GET /users/{id}` and `GET /roles`, this endpoint is keyed to the JWT (not to the currently viewed organization), so it works for super-admins whose user/role rows live in the cluster-internal org but who are viewing a different tenant. Authenticated callers always have permission to read their own identity, so the route is not gated b"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

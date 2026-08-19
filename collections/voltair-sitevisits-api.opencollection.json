@@ -1,0 +1,90 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Voltair ApiKeys SiteVisits API",
+    "version": "0.1.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "SiteVisits",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List site visits for a mission",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/site-visits",
+            "params": [
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "compress",
+                "value": "",
+                "type": "query",
+                "description": "When true, returns a compressed representation: a mixed array of the highest-level ClusterVisit objects (whose parent cluster has no ClusterVisit in this mission) and unclustered SiteVisit objects. Pagination parameters are ignored when compress=true.\n"
+              },
+              {
+                "name": "unclustered",
+                "value": "",
+                "type": "query",
+                "description": "When true, returns only visits where clusterVisitId is null"
+              },
+              {
+                "name": "status",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated statuses"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "Returns site visits for the given mission. When `compress=true`, returns\na mixed array of the highest-level ClusterVisit and unclustered SiteVisit\nobjects instead of the paginated list. Each item in the compressed\nresponse includes a `type` discriminator field (`\"clusterVisit\"` or\n`\"siteVisit\"`).\n"
+        },
+        {
+          "info": {
+            "name": "Get site visit",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/site-visits/:siteVisitId",
+            "params": [
+              {
+                "name": "siteVisitId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get site visit"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

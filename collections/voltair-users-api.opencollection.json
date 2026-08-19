@@ -1,0 +1,193 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Voltair ApiKeys Users API",
+    "version": "0.1.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Users",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List users",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/users",
+            "params": [
+              {
+                "name": "status",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated statuses (active, invited, deactivated)"
+              },
+              {
+                "name": "roleId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "Returns users for the caller's organization. Users assigned to a cluster-wide role (`role.organizationId == null`, e.g. super-admins) are excluded; they belong to no single org's user catalog and the org-scoped Users tab does not display them."
+        },
+        {
+          "info": {
+            "name": "Invite user",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/users",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Invites a new user. Sets status to \"invited\" and triggers an invitation email. Creates an actor record server-side."
+        },
+        {
+          "info": {
+            "name": "Get user",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/users/:userId",
+            "params": [
+              {
+                "name": "userId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get user"
+        },
+        {
+          "info": {
+            "name": "Update user",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "/users/:userId",
+            "params": [
+              {
+                "name": "userId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Updates user profile or role assignment. Cannot edit id, actorId, cognitoId, or email."
+        },
+        {
+          "info": {
+            "name": "Delete user",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "/users/:userId",
+            "params": [
+              {
+                "name": "userId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Soft-deletes a user. The user's actor record persists for audit trail integrity. Returns 409 if the user has active API keys."
+        },
+        {
+          "info": {
+            "name": "Deactivate user",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "/users/:userId/deactivate",
+            "params": [
+              {
+                "name": "userId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Sets user status to \"deactivated\"."
+        },
+        {
+          "info": {
+            "name": "Reactivate user",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "/users/:userId/reactivate",
+            "params": [
+              {
+                "name": "userId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Sets a deactivated user's status to \"active\"."
+        },
+        {
+          "info": {
+            "name": "Resend invitation",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/users/:userId/resend-invitation",
+            "params": [
+              {
+                "name": "userId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Generates a fresh Cognito temporary password, resets the Cognito user\nback to FORCE_CHANGE_PASSWORD state, and re-sends the invitation email.\nOnly valid while the user's status is \"invited\" — returns 409 Conflict\nonce they have accepted the original invitation.\n"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

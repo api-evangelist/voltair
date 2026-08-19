@@ -1,0 +1,2561 @@
+{
+  "item": [
+    {
+      "id": "04c0c2b9-7ba5-4aea-a3e4-2b9f2cfbc465",
+      "name": "Inspections",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "6ec75d99-e3d9-4818-9b0b-5cb13776547b",
+          "name": "List site inspections",
+          "request": {
+            "name": "List site inspections",
+            "description": {
+              "content": "Returns SiteInspection records for the caller's organization. All filter parameters are optional; row-level security confines results to the caller's organization.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "inspections"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "siteId",
+                  "value": "<uuid>",
+                  "description": "Restrict to inspections for a single site."
+                },
+                {
+                  "disabled": false,
+                  "key": "missionId",
+                  "value": "<uuid>",
+                  "description": "Restrict to inspections for a single mission."
+                },
+                {
+                  "disabled": false,
+                  "key": "assetId",
+                  "value": "<uuid>",
+                  "description": "Restrict to inspections that contain at least one asset inspection for this asset."
+                },
+                {
+                  "disabled": false,
+                  "key": "hasComments",
+                  "value": "<boolean>",
+                  "description": "When `true`, restrict to inspections that have at least one comment on any associated media (site-level via `site_inspection_media`, or asset-level via the site's `asset_inspections`). Any other value is treated as absent."
+                },
+                {
+                  "disabled": false,
+                  "key": "siteName",
+                  "value": "<string>",
+                  "description": "Case-insensitive substring match (ILIKE) on the joined site's `name`. Pass plain text; the server wraps it with `%` on both sides."
+                },
+                {
+                  "disabled": false,
+                  "key": "siteType[]",
+                  "value": "<string>",
+                  "description": "Repeating allowlist on the joined site's `site_type`. Empty/absent means any."
+                },
+                {
+                  "disabled": false,
+                  "key": "siteType[]",
+                  "value": "<string>",
+                  "description": "Repeating allowlist on the joined site's `site_type`. Empty/absent means any."
+                },
+                {
+                  "disabled": false,
+                  "key": "geometryType[]",
+                  "value": "<string>",
+                  "description": "Repeating GeoJSON geometry-type allowlist on the joined site's geometry (mapped to `ST_GeometryType` internally). Empty/absent means any."
+                },
+                {
+                  "disabled": false,
+                  "key": "geometryType[]",
+                  "value": "<string>",
+                  "description": "Repeating GeoJSON geometry-type allowlist on the joined site's geometry (mapped to `ST_GeometryType` internally). Empty/absent means any."
+                },
+                {
+                  "disabled": false,
+                  "key": "priority[]",
+                  "value": "<string>",
+                  "description": "Repeating allowlist on the denormalized `sites.priority` column (`none` also matches a NULL priority). Empty/absent means any."
+                },
+                {
+                  "disabled": false,
+                  "key": "priority[]",
+                  "value": "<string>",
+                  "description": "Repeating allowlist on the denormalized `sites.priority` column (`none` also matches a NULL priority). Empty/absent means any."
+                },
+                {
+                  "disabled": false,
+                  "key": "resolution[]",
+                  "value": "<string>",
+                  "description": "Repeating allowlist bucketing each site inspection by its defects' `workDoneAt` flags: `all_resolved` (every defect resolved), `some_resolved` (a mix), `none_resolved` (at least one defect, none resolved). Site inspections with zero defects match no bucket and are excluded when this filter is active."
+                },
+                {
+                  "disabled": false,
+                  "key": "resolution[]",
+                  "value": "<string>",
+                  "description": "Repeating allowlist bucketing each site inspection by its defects' `workDoneAt` flags: `all_resolved` (every defect resolved), `some_resolved` (a mix), `none_resolved` (at least one defect, none resolved). Site inspections with zero defects match no bucket and are excluded when this filter is active."
+                },
+                {
+                  "disabled": false,
+                  "key": "review[]",
+                  "value": "<string>",
+                  "description": "Repeating allowlist bucketing each site inspection by its defects' `reviewedAt` flags: `all_reviewed` (every defect reviewed), `some_reviewed` (a mix), `none_reviewed` (at least one defect, none reviewed). Site inspections with zero defects match no bucket and are excluded when this filter is active."
+                },
+                {
+                  "disabled": false,
+                  "key": "review[]",
+                  "value": "<string>",
+                  "description": "Repeating allowlist bucketing each site inspection by its defects' `reviewedAt` flags: `all_reviewed` (every defect reviewed), `some_reviewed` (a mix), `none_reviewed` (at least one defect, none reviewed). Site inspections with zero defects match no bucket and are excluded when this filter is active."
+                },
+                {
+                  "disabled": false,
+                  "key": "includeUncapturable",
+                  "value": "<boolean>",
+                  "description": "When `true`, additionally returns synthesized placeholder SiteInspection rows for mission sites tagged `inaccessible` that have no persisted inspection (no media was captured). Requires `missionId`; sending it without `missionId` is a `400`. Placeholder rows carry `not_capturable: true`, reuse the site's id, and expand a `site` whose `tags` include `inaccessible`. They pass through the same filters and pagination as real rows."
+                },
+                {
+                  "disabled": false,
+                  "key": "mediaSource[]",
+                  "value": "<string>",
+                  "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+                },
+                {
+                  "disabled": false,
+                  "key": "mediaSource[]",
+                  "value": "<string>",
+                  "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+                },
+                {
+                  "disabled": false,
+                  "key": "limit",
+                  "value": "<integer>",
+                  "description": "Page size (default 50, max 200)"
+                },
+                {
+                  "disabled": false,
+                  "key": "cursor",
+                  "value": "<string>",
+                  "description": "Opaque pagination cursor from a previous response"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "f13051df-75cb-4a7c-a0f5-8554cafb87bf",
+              "name": "Success",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "hasComments",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "siteName",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "includeUncapturable",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"4b0c5298-2ddd-59b3-9f65-310442435ad2\",\n      \"organizationId\": \"bd0c9076-603d-82be-bca3-70460edbe0c3\",\n      \"siteId\": \"d0b69123-2333-79f5-6ee4-f556f15e3634\",\n      \"missionId\": \"77f95a6a-c9f3-027f-f242-f2c4654450c4\",\n      \"status\": \"planned\",\n      \"deletedAt\": 9469.320331194676,\n      \"createdAt\": 4968.264201571069,\n      \"status_metadata\": {\n        \"key_0\": 461.90258776971694,\n        \"key_1\": true,\n        \"key_2\": 4671,\n        \"key_3\": true\n      },\n      \"not_capturable\": false\n    },\n    {\n      \"id\": \"50201559-7218-187d-4721-5885fd142173\",\n      \"organizationId\": \"f3d3b49c-a313-030d-c6b1-3aba3c5c2fdd\",\n      \"siteId\": \"7b23eb9c-d9c9-6f79-bbc2-e6d403eede0e\",\n      \"missionId\": \"8c73bef3-cc6f-3fe0-0252-995c605d8ab5\",\n      \"status\": \"analysis-failed\",\n      \"deletedAt\": 8223.97444005575,\n      \"createdAt\": 2832.8612695757847,\n      \"status_metadata\": {\n        \"key_0\": 5879\n      },\n      \"not_capturable\": false\n    }\n  ],\n  \"meta\": {\n    \"cursor\": \"string\",\n    \"total\": 7720\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "534fc35a-72d7-48e1-97bb-ca01ab57b94c",
+              "name": "Bad request or validation error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "hasComments",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "siteName",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "includeUncapturable",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "f06813b0-a90a-4f55-8591-d7bf30d33588",
+              "name": "Authentication required",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "hasComments",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "siteName",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "includeUncapturable",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "0a895ca3-c3f4-47b2-925c-d740df797daf",
+              "name": "Insufficient permissions",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "hasComments",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "siteName",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "includeUncapturable",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "8ed0f0d0-c63e-4444-9436-9c037bd454a4",
+              "name": "Rate limit exceeded",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "hasComments",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "siteName",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "includeUncapturable",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "disabled": false,
+                  "description": "Maximum requests per window",
+                  "key": "X-RateLimit-Limit",
+                  "value": "2649"
+                },
+                {
+                  "disabled": false,
+                  "description": "Requests remaining in current window",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "2649"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (ms) when the window resets",
+                  "key": "X-RateLimit-Reset",
+                  "value": "3649.563504295417"
+                },
+                {
+                  "disabled": false,
+                  "description": "Seconds until the next rate limit window",
+                  "key": "Retry-After",
+                  "value": "2649"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "74e96811-20e9-4cbf-b0b7-be511a530e97",
+              "name": "Internal server error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "hasComments",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "siteName",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "siteType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "geometryType[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "priority[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "resolution[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "review[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "includeUncapturable",
+                      "value": "<boolean>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "ebf3f070-534f-4307-9725-ecdc3a24de57",
+          "name": "Get a site inspection by id",
+          "request": {
+            "name": "Get a site inspection by id",
+            "description": {},
+            "url": {
+              "path": [
+                "inspections",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "mediaSource[]",
+                  "value": "<string>",
+                  "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+                },
+                {
+                  "disabled": false,
+                  "key": "mediaSource[]",
+                  "value": "<string>",
+                  "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+                }
+              ],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<uuid>",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "783f6f6c-6317-4f30-880f-bd5869922b04",
+              "name": "Success",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"962484e8-c80b-1e65-d5d2-3e8d9bc0b5f8\",\n    \"organizationId\": \"b7f2a4ef-acb7-fa21-7615-b1426d230889\",\n    \"siteId\": \"1bae77fc-d04a-bdbd-505e-be46de4fa037\",\n    \"missionId\": \"39377671-e1f5-1b01-7ced-39c458593286\",\n    \"status\": \"analysis-failed\",\n    \"deletedAt\": 5462.159976586366,\n    \"createdAt\": 1065.293843593088,\n    \"status_metadata\": {\n      \"key_0\": 1209\n    },\n    \"not_capturable\": false\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "f0bc3c5e-40c1-4620-87bb-8c086a20cbe4",
+              "name": "Authentication required",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "94ecf804-c07b-4950-bea0-bcafba51c17d",
+              "name": "Insufficient permissions",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "337371cf-ee99-4b50-8a5e-0ac69349ac2a",
+              "name": "Resource not found",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "b2e0dcc4-ecec-4422-887a-a7085d502f02",
+              "name": "Rate limit exceeded",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "disabled": false,
+                  "description": "Maximum requests per window",
+                  "key": "X-RateLimit-Limit",
+                  "value": "2649"
+                },
+                {
+                  "disabled": false,
+                  "description": "Requests remaining in current window",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "2649"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (ms) when the window resets",
+                  "key": "X-RateLimit-Reset",
+                  "value": "3649.563504295417"
+                },
+                {
+                  "disabled": false,
+                  "description": "Seconds until the next rate limit window",
+                  "key": "Retry-After",
+                  "value": "2649"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "9b45ade1-e2ec-43b3-a375-9968fadbd27d",
+              "name": "Internal server error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "0a10b9d8-9aa5-4fac-820b-e07a6bf9573a",
+          "name": "List asset inspections",
+          "request": {
+            "name": "List asset inspections",
+            "description": {
+              "content": "Returns AssetInspection records for the caller's organization. All filters are optional; row-level security confines results to the caller's organization.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "asset-inspections"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "siteInspectionId",
+                  "value": "<uuid>",
+                  "description": "Restrict to asset inspections within a single site inspection."
+                },
+                {
+                  "disabled": false,
+                  "key": "missionId",
+                  "value": "<uuid>",
+                  "description": "Restrict to asset inspections for a single mission."
+                },
+                {
+                  "disabled": false,
+                  "key": "siteId",
+                  "value": "<uuid>",
+                  "description": "Restrict to asset inspections whose parent site inspection belongs to this site."
+                },
+                {
+                  "disabled": false,
+                  "key": "assetId",
+                  "value": "<uuid>",
+                  "description": "Restrict to asset inspections for a single asset."
+                },
+                {
+                  "disabled": false,
+                  "key": "mediaSource[]",
+                  "value": "<string>",
+                  "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+                },
+                {
+                  "disabled": false,
+                  "key": "mediaSource[]",
+                  "value": "<string>",
+                  "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+                },
+                {
+                  "disabled": false,
+                  "key": "limit",
+                  "value": "<integer>",
+                  "description": "Page size (default 50, max 200)"
+                },
+                {
+                  "disabled": false,
+                  "key": "cursor",
+                  "value": "<string>",
+                  "description": "Opaque pagination cursor from a previous response"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "163c26c4-d95a-4b17-847a-bc8e76060671",
+              "name": "Success",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteInspectionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"892e9d6e-d5c2-8cf6-ea12-a2a8a24e891a\",\n      \"organizationId\": \"48e5f33d-4e3d-2a7a-2ae5-d21f71904ba0\",\n      \"assetId\": \"821ca9c1-0d05-bed3-a00b-0cda622e89dd\",\n      \"missionId\": \"0ade26a7-8f99-493f-19e2-22898901d282\",\n      \"siteInspectionId\": \"84273516-9022-3a0c-02ce-6ac9a0616f39\",\n      \"deletedAt\": 2054.000143722785,\n      \"createdAt\": 9677.951805876082\n    },\n    {\n      \"id\": \"3da556cc-57c6-4e39-6123-bb29991ca107\",\n      \"organizationId\": \"2ade3fe5-da31-a4a3-a8ec-a50f5aaf64d8\",\n      \"assetId\": \"67798fca-ecb7-7993-e6b3-bddd49516896\",\n      \"missionId\": \"9ec67060-3a8c-cdcf-8f24-3566f9f35a21\",\n      \"siteInspectionId\": \"868db51a-d6de-6de2-c855-749dd7b8da74\",\n      \"deletedAt\": 702.4485416874094,\n      \"createdAt\": 9863.108791216684\n    }\n  ],\n  \"meta\": {\n    \"cursor\": \"string\",\n    \"total\": 8274\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "cc850873-ae2d-4ad0-8ac8-879de0d5b33e",
+              "name": "Bad request or validation error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteInspectionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "02c3ded8-1d28-4357-a755-ed0a7b3a123a",
+              "name": "Authentication required",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteInspectionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "c0361f2d-f93f-430a-a43f-53c0e142ebf7",
+              "name": "Insufficient permissions",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteInspectionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d5966432-93ab-4f3e-af26-bec397c93bd0",
+              "name": "Rate limit exceeded",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteInspectionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "disabled": false,
+                  "description": "Maximum requests per window",
+                  "key": "X-RateLimit-Limit",
+                  "value": "2649"
+                },
+                {
+                  "disabled": false,
+                  "description": "Requests remaining in current window",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "2649"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (ms) when the window resets",
+                  "key": "X-RateLimit-Reset",
+                  "value": "3649.563504295417"
+                },
+                {
+                  "disabled": false,
+                  "description": "Seconds until the next rate limit window",
+                  "key": "Retry-After",
+                  "value": "2649"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "6a12fe28-b48c-4d4d-b4ce-748de4ae1edc",
+              "name": "Internal server error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "siteInspectionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "missionId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "siteId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "assetId",
+                      "value": "<uuid>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "<integer>"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "886c0445-42bd-485b-9e67-a6a09dbab084",
+          "name": "Get an asset inspection by id",
+          "request": {
+            "name": "Get an asset inspection by id",
+            "description": {},
+            "url": {
+              "path": [
+                "asset-inspections",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "mediaSource[]",
+                  "value": "<string>",
+                  "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+                },
+                {
+                  "disabled": false,
+                  "key": "mediaSource[]",
+                  "value": "<string>",
+                  "description": "Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint."
+                }
+              ],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<uuid>",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "a6730b32-6d92-40e6-b2c6-cc555f2a14ce",
+              "name": "Success",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"eecdb337-a074-7419-f1cd-351b634631c1\",\n    \"organizationId\": \"75654a8c-b379-31a3-9dc4-b597455f5cdd\",\n    \"assetId\": \"3029a230-9231-5e89-de5c-015a2d4ecfa4\",\n    \"missionId\": \"fa50216f-38b8-783c-39e2-d698cc515cb3\",\n    \"siteInspectionId\": \"9fdb40f1-7223-2106-6a04-dc43e95dd346\",\n    \"deletedAt\": 6698.215038245733,\n    \"createdAt\": 7514.357549261351\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "aef29e5f-dc0f-4553-98c3-9a7f305c6912",
+              "name": "Authentication required",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d415e364-c490-4781-b3c4-b96499a2b0a7",
+              "name": "Insufficient permissions",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "ceed5351-3f14-4bb0-87dc-94cd13225ef7",
+              "name": "Resource not found",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "5ee5e21a-5966-42f0-aa5c-f63eb24783ee",
+              "name": "Rate limit exceeded",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "disabled": false,
+                  "description": "Maximum requests per window",
+                  "key": "X-RateLimit-Limit",
+                  "value": "2649"
+                },
+                {
+                  "disabled": false,
+                  "description": "Requests remaining in current window",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "2649"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (ms) when the window resets",
+                  "key": "X-RateLimit-Reset",
+                  "value": "3649.563504295417"
+                },
+                {
+                  "disabled": false,
+                  "description": "Seconds until the next rate limit window",
+                  "key": "Retry-After",
+                  "value": "2649"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "f876feb8-f166-4c89-97a5-2d8933de6371",
+              "name": "Internal server error",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "asset-inspections",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    },
+                    {
+                      "key": "mediaSource[]",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<uuid>",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "Unique request identifier (UUID)",
+                  "key": "X-Request-Id",
+                  "value": "9f83e675-4952-43c7-36ec-210b0aed01bb"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"string\",\n    \"message\": \"string\",\n    \"details\": {\n      \"key_0\": \"string\",\n      \"key_1\": 1223,\n      \"key_2\": \"string\"\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "/",
+      "key": "baseUrl"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}"
+      }
+    ]
+  },
+  "info": {
+    "_postman_id": "36d8b4e5-9320-425d-adb6-7c07b7601f69",
+    "name": "Voltair ApiKeys Inspections API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.\nAll timestamp fields on this API (createdAt, updatedAt, scheduledFor, capturedAt, expiresAt, deletedAt, etc.) are Unix timestamps in milliseconds since the epoch (UTC). Both request and response bodies use this representation.",
+      "type": "text/plain"
+    }
+  }
+}

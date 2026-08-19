@@ -238,3 +238,9 @@ tools:
 - name: list_webhook_deliveries
   description: List webhook deliveries
   source_operation: openapi/voltair-api-openapi-original.yml#listWebhookDeliveries
+deployment:
+  mode: none
+  verified: derived
+  tools: 76
+  checked: '2026-08-12'
+  source: catalog MCP census

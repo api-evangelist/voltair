@@ -1,0 +1,202 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Voltair ApiKeys Missions API",
+    "version": "0.1.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Missions",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List missions",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/missions",
+            "params": [
+              {
+                "name": "status",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated statuses"
+              },
+              {
+                "name": "siteGeometries",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated geometry type filter (point, line, area)"
+              },
+              {
+                "name": "scheduledAfter",
+                "value": "",
+                "type": "query",
+                "description": "Unix timestamp (ms) lower bound on scheduledFor"
+              },
+              {
+                "name": "scheduledBefore",
+                "value": "",
+                "type": "query",
+                "description": "Unix timestamp (ms) upper bound on scheduledFor"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "List missions"
+        },
+        {
+          "info": {
+            "name": "Create mission",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/missions",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Creates a mission. Body may include siteIds and/or clusterIds. When a cluster ID is provided, all sites in that cluster are included. The server expands cluster IDs into individual sites, creating a SiteVisit for every site and a ClusterVisit for each fully-covered cluster."
+        },
+        {
+          "info": {
+            "name": "Get mission",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/missions/:missionId",
+            "params": [
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get mission"
+        },
+        {
+          "info": {
+            "name": "Update mission",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "/missions/:missionId",
+            "params": [
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Updates a mission. Cannot edit id or organizationId."
+        },
+        {
+          "info": {
+            "name": "Delete mission",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "/missions/:missionId",
+            "params": [
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Soft-deletes the mission. SiteVisits and ClusterVisits are untouched, hidden by RLS/query filtering on the mission's deletedAt."
+        },
+        {
+          "info": {
+            "name": "Add sites to mission",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/missions/:missionId/sites",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Adds sites to an existing mission. The server expands cluster IDs into individual sites, creates SiteVisit rows for each new site, and creates or updates ClusterVisit records. Sites already in the mission are ignored."
+        },
+        {
+          "info": {
+            "name": "Remove sites from mission",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "/missions/:missionId/sites",
+            "params": [
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Removes sites from an existing mission. Soft-deletes the corresponding SiteVisit rows and adjusts ClusterVisit counts."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

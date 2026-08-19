@@ -1,0 +1,242 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Voltair ApiKeys Media API",
+    "version": "0.1.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Media",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List media for a mission",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/media",
+            "params": [
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "siteId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "vehicleId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "mediaType",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated media types (image, video)"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "List media for a mission"
+        },
+        {
+          "info": {
+            "name": "Create a media row",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/media",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Creates a mission_media row and returns it along with a short-lived\npresigned S3 upload URL the caller uses to PUT the actual object.\n"
+        },
+        {
+          "info": {
+            "name": "Issue a signed URL for the mission-zip download",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/media/download-url",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Returns a short-lived HMAC-signed URL pointing at /media/download.zip\nthat carries its own auth proof in the query string, so a plain\n`<a href download>` click in the browser can trigger the download\nwithout forging an Authorization header.\n"
+        },
+        {
+          "info": {
+            "name": "Download all (optionally filtered) mission media as a streaming zip",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/media/download.zip",
+            "params": [
+              {
+                "name": "missionId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "siteId",
+                "value": "",
+                "type": "query",
+                "description": "Restrict to a single site."
+              },
+              {
+                "name": "mediaIds",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated list of media UUIDs. Overrides `siteId` when set;\nthe zip contains exactly these rows, ordered by site and capture time.\n"
+              },
+              {
+                "name": "includeEvidenceCrops",
+                "value": "",
+                "type": "query",
+                "description": "When `true`, annotated evidence crops (original photo cropped\naround each defect_evidence bbox with a priority-colored\nstroke) are rendered on demand and appended under `evidence/`.\nOpt-in because rendering is CPU-bound and extends the download.\nOn the signed-URL path the flag is covered by the HMAC claims.\n"
+              }
+            ]
+          },
+          "docs": "Streams a zip archive containing the original media files for a mission.\nThe archive is generated server-side by fetching each object directly\nfrom S3 — no client-side file-count limits or cross-origin navigation.\nEntries are organised as `<siteName>/<ISO-timestamp>.<ext>` with\nunassigned media grouped under `_unassigned/`.\n"
+        },
+        {
+          "info": {
+            "name": "Download a single media object",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/media/:mediaId/download",
+            "params": [
+              {
+                "name": "mediaId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Streams the original S3 object for a single media row with an\n`attachment` Content-Disposition header. Used by the demo-ui\nlightbox and inspection-row download buttons to avoid the CORS\nand cross-origin `<a download>` limitations of going directly\nto CloudFront.\n"
+        },
+        {
+          "info": {
+            "name": "Download the annotated evidence crop for a defect_evidence row",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/defect-evidence/:evidenceId/download",
+            "params": [
+              {
+                "name": "evidenceId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Renders the downloadable artifact for one defect_evidence row on\ndemand. When the row carries a bbox, the response is the ORIGINAL\nphoto cropped to a square window with 30% margin around the bbox and\nthe bbox stroked in the defect's priority color — exactly what the\nplatform's evidence viewer shows on screen. When the row has no bbox\n(non-CVAT-sourced evidence), the original object is streamed\nunmodified. Replaces the retired stored crop derivatives.\n"
+        },
+        {
+          "info": {
+            "name": "Get media item",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/media/:mediaId",
+            "params": [
+              {
+                "name": "mediaId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get media item"
+        },
+        {
+          "info": {
+            "name": "List comments on a media item",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/media/:mediaId/comments",
+            "params": [
+              {
+                "name": "mediaId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Returns the comments attached to a media item in chronological\n(oldest-first) order. Each comment's `actor` is expanded; for\nactor.type == \"user\", the `actor.user` object contains the first\nname, last name, and email of the commenter.\n"
+        },
+        {
+          "info": {
+            "name": "Add comment to media",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/media/:mediaId/comments",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "mediaId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Add comment to media"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

@@ -1,0 +1,217 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Voltair ApiKeys Sites API",
+    "version": "0.1.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Sites",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List sites",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/sites",
+            "params": [
+              {
+                "name": "clusterId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "unclustered",
+                "value": "",
+                "type": "query",
+                "description": "If true, return only sites with no cluster assignment. Cannot be combined with clusterId."
+              },
+              {
+                "name": "externalId",
+                "value": "",
+                "type": "query",
+                "description": "Filter by customer-facing external identifier"
+              },
+              {
+                "name": "tags",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated tag values"
+              },
+              {
+                "name": "priority",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated priorities (high, medium, low, none)"
+              },
+              {
+                "name": "siteType",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated site types (e.g. substation,distribution_pole)"
+              },
+              {
+                "name": "geometryType",
+                "value": "",
+                "type": "query",
+                "description": "Filter by the GeoJSON geometry type of the site"
+              },
+              {
+                "name": "q",
+                "value": "",
+                "type": "query",
+                "description": "Case-insensitive substring match against name, externalId, and description"
+              },
+              {
+                "name": "bounds",
+                "value": "",
+                "type": "query",
+                "description": "Bounding box: minLng,minLat,maxLng,maxLat"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Page size (default 50, max 200)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque pagination cursor from a previous response"
+              }
+            ]
+          },
+          "docs": "List sites"
+        },
+        {
+          "info": {
+            "name": "Create site",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/sites",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Create site"
+        },
+        {
+          "info": {
+            "name": "Bulk create sites",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "/sites/bulk",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Bulk create sites"
+        },
+        {
+          "info": {
+            "name": "Bulk delete sites",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "/sites/bulk",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Soft-deletes an array of sites by ID. The `ids` array must be\nnon-empty and at most 10000 entries; callers that need to delete more\nshould submit multiple requests."
+        },
+        {
+          "info": {
+            "name": "Get site",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "/sites/:siteId",
+            "params": [
+              {
+                "name": "siteId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Get site"
+        },
+        {
+          "info": {
+            "name": "Update site",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "/sites/:siteId",
+            "params": [
+              {
+                "name": "siteId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Updates a site. Cannot edit id or organizationId."
+        },
+        {
+          "info": {
+            "name": "Delete site",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "/sites/:siteId",
+            "params": [
+              {
+                "name": "siteId",
+                "value": "",
+                "type": "path"
+              }
+            ]
+          },
+          "docs": "Soft-deletes a site by setting deleted_at."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}
