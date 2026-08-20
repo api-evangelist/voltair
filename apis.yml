@@ -50,6 +50,8 @@ apis:
   humanURL: https://api.voltairlabs.com/docs
   baseURL: https://api.voltairlabs.com
   tags:
+  - APIKeys
+  tags_raw:
   - ApiKeys
   properties:
   - type: OpenAPI
@@ -78,6 +80,8 @@ apis:
   humanURL: https://api.voltairlabs.com/docs
   baseURL: https://api.voltairlabs.com
   tags:
+  - Cluster
+  tags_raw:
   - Clusters
   properties:
   - type: OpenAPI
@@ -106,6 +110,8 @@ apis:
   humanURL: https://api.voltairlabs.com/docs
   baseURL: https://api.voltairlabs.com
   tags:
+  - Event
+  tags_raw:
   - Events
   properties:
   - type: OpenAPI
@@ -232,6 +238,8 @@ apis:
   humanURL: https://api.voltairlabs.com/docs
   baseURL: https://api.voltairlabs.com
   tags:
+  - Transaction
+  tags_raw:
   - Transactions
   properties:
   - type: OpenAPI
@@ -246,6 +254,8 @@ apis:
   humanURL: https://api.voltairlabs.com/docs
   baseURL: https://api.voltairlabs.com
   tags:
+  - User
+  tags_raw:
   - Users
   properties:
   - type: OpenAPI
@@ -260,6 +270,8 @@ apis:
   humanURL: https://api.voltairlabs.com/docs
   baseURL: https://api.voltairlabs.com
   tags:
+  - Webhook
+  tags_raw:
   - Webhooks
   properties:
   - type: OpenAPI
