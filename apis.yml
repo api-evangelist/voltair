@@ -61,7 +61,7 @@ apis:
   humanURL: https://api.voltairlabs.com/docs
   baseURL: https://api.voltairlabs.com
   tags:
-  - APIKeys
+  - ApiKeys
   tags_raw:
   - ApiKeys
   properties:
