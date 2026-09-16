@@ -56,22 +56,6 @@ tags:
 - LiDAR
 - Aerial Imagery
 apis:
-- aid: voltair:voltair-apikeys-api
-  name: Voltair ApiKeys API
-  description: The ApiKeys API from Voltair — 2 operation(s) for apikeys.
-  humanURL: https://api.voltairlabs.com/docs
-  baseURL: https://api.voltairlabs.com
-  tags:
-  - APIKeys
-  tags_raw:
-  - ApiKeys
-  properties:
-  - type: OpenAPI
-    url: openapi/voltair-apikeys-api-openapi.yml
-  - type: Documentation
-    url: https://api.voltairlabs.com/docs
-  - type: APIReference
-    url: https://api.voltairlabs.com/docs
 - aid: voltair:voltair-assets-api
   name: Voltair Assets API
   description: The Assets API from Voltair — 6 operation(s) for assets.
@@ -288,6 +272,20 @@ apis:
   properties:
   - type: OpenAPI
     url: openapi/voltair-webhooks-api-openapi.yml
+  - type: Documentation
+    url: https://api.voltairlabs.com/docs
+  - type: APIReference
+    url: https://api.voltairlabs.com/docs
+- aid: voltair:voltair-api-keys-api
+  name: Voltair API Keys API
+  description: The API Keys API from Voltair — 2 operation(s) for api keys.
+  humanURL: https://api.voltairlabs.com/docs
+  baseURL: https://api.voltairlabs.com
+  tags:
+  - API Keys
+  properties:
+  - type: OpenAPI
+    url: openapi/voltair-api-keys-api-openapi.yml
   - type: Documentation
     url: https://api.voltairlabs.com/docs
   - type: APIReference
