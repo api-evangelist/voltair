@@ -136,6 +136,8 @@ apis:
   humanURL: https://api.voltairlabs.com/docs
   baseURL: https://api.voltairlabs.com
   tags:
+  - Inspection
+  tags_raw:
   - Inspections
   properties:
   - type: OpenAPI
@@ -282,6 +284,8 @@ apis:
   humanURL: https://api.voltairlabs.com/docs
   baseURL: https://api.voltairlabs.com
   tags:
+  - APIKeys
+  tags_raw:
   - API Keys
   properties:
   - type: OpenAPI
