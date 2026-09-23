@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.2.0
 info:
-  title: Voltair ApiKeys SiteVisits API
+  title: Voltair Site Visits API
   version: 0.1.0
   description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
 
@@ -27,9 +27,7 @@ paths:
 
         response includes a `type` discriminator field (`"clusterVisit"` or
 
-        `"siteVisit"`).
-
-        '
+        `"siteVisit"`).'
       parameters:
       - name: missionId
         in: query
@@ -130,8 +128,17 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   responses:
-    Forbidden:
-      description: Insufficient permissions
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -150,24 +157,6 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     BadRequest:
       description: Bad request or validation error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -200,6 +189,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
     SiteVisitStatus:
       type: string
@@ -209,6 +207,19 @@ components:
       - complete
       - skipped
       - failed
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
     ErrorResponse:
       type: object
       required:
@@ -230,117 +241,12 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    ClusterVisit:
-      type: object
-      required:
-      - id
-      - organizationId
-      - missionId
-      - clusterId
-      - siteCount
-      - completedCount
-      - status
-      - deletedAt
-      - createdAt
-      - updatedAt
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        missionId:
-          type: string
-          format: uuid
-        clusterId:
-          type: string
-          format: uuid
-        siteCount:
-          type: integer
-        completedCount:
-          type: integer
-        status:
-          $ref: '#/components/schemas/ClusterVisitStatus'
-        deletedAt:
-          type: number
-          nullable: true
-        createdAt:
-          type: number
-        updatedAt:
-          type: number
     ClusterVisitStatus:
       type: string
       enum:
       - pending
       - in-progress
       - complete
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type: string
-          nullable: true
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
-    SiteVisit:
-      type: object
-      required:
-      - id
-      - organizationId
-      - missionId
-      - siteId
-      - clusterVisitId
-      - status
-      - completedAt
-      - recaptureReason
-      - recaptureRequestedBy
-      - recaptureRequestedAt
-      - deletedAt
-      - createdAt
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        missionId:
-          type: string
-          format: uuid
-        siteId:
-          type: string
-          format: uuid
-        clusterVisitId:
-          type: string
-          format: uuid
-          nullable: true
-          description: FK to ClusterVisit; null for unclustered sites
-        status:
-          $ref: '#/components/schemas/SiteVisitStatus'
-        completedAt:
-          type: number
-          nullable: true
-        recaptureReason:
-          type: string
-          nullable: true
-        recaptureRequestedBy:
-          type: string
-          format: uuid
-          nullable: true
-          description: actorId of the requester
-        recaptureRequestedAt:
-          type: number
-          nullable: true
-        deletedAt:
-          type: number
-          nullable: true
-        createdAt:
-          type: number
     CompressedVisitsResponse:
       type: object
       required:
@@ -387,6 +293,112 @@ components:
             totalSiteCount:
               type: integer
               description: Total number of sites represented across all items
+    SiteVisit:
+      type: object
+      required:
+      - id
+      - organizationId
+      - missionId
+      - siteId
+      - clusterVisitId
+      - status
+      - completedAt
+      - recaptureReason
+      - recaptureRequestedBy
+      - recaptureRequestedAt
+      - deletedAt
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        siteId:
+          type: string
+          format: uuid
+        clusterVisitId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: FK to ClusterVisit; null for unclustered sites
+        status:
+          $ref: '#/components/schemas/SiteVisitStatus'
+        completedAt:
+          type:
+          - number
+          - 'null'
+        recaptureReason:
+          type:
+          - string
+          - 'null'
+        recaptureRequestedBy:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: actorId of the requester
+        recaptureRequestedAt:
+          type:
+          - number
+          - 'null'
+        deletedAt:
+          type:
+          - number
+          - 'null'
+        createdAt:
+          type: number
+    ClusterVisit:
+      type: object
+      required:
+      - id
+      - organizationId
+      - missionId
+      - clusterId
+      - siteCount
+      - completedCount
+      - status
+      - deletedAt
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        clusterId:
+          type: string
+          format: uuid
+        siteCount:
+          type: integer
+        completedCount:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ClusterVisitStatus'
+        deletedAt:
+          type:
+          - number
+          - 'null'
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
   parameters:
     CursorParam:
       name: cursor
@@ -402,12 +414,6 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
-      schema:
-        type: string
-        format: uuid
   securitySchemes:
     BearerAuth:
       type: http

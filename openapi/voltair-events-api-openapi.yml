@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.2.0
 info:
-  title: Voltair ApiKeys Events API
+  title: Voltair Events API
   version: 0.1.0
   description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
 
@@ -120,17 +120,8 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   responses:
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
+    InternalError:
+      description: Internal server error
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -147,8 +138,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
+    NotFound:
+      description: Resource not found
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -181,7 +172,47 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    EventResourceType:
+      type: string
+      enum:
+      - site
+      - cluster
+      - mission
+      - cluster_visit
+      - site_visit
+      - mission_media
+      - asset
+      - defect
+      - site_inspection
+      - asset_inspection
+      - organization
+      - user
+      - role
+      - api_key
+      - webhook
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
     ErrorResponse:
       type: object
       required:
@@ -203,18 +234,6 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type: string
-          nullable: true
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
     Event:
       type: object
       required:
@@ -247,13 +266,15 @@ components:
         resourceType:
           $ref: '#/components/schemas/EventResourceType'
         resourceId:
-          type: string
+          type:
+          - string
+          - 'null'
           format: uuid
-          nullable: true
           description: Single resource; null for bulk events
         resourceIds:
-          type: array
-          nullable: true
+          type:
+          - array
+          - 'null'
           items:
             type: string
             format: uuid
@@ -266,61 +287,55 @@ components:
           type: string
           format: uuid
         actorType:
-          type: string
+          type:
+          - string
+          - 'null'
           enum:
           - user
           - api_key
           - system
-          nullable: true
           description: Type of the actor (resolved at read time). Null if the actor row is not visible under the current org RLS scope (e.g. a Voltair super admin who has since switched to a different organization).
         actorName:
-          type: string
-          nullable: true
+          type:
+          - string
+          - 'null'
           description: 'Display name for the actor: ''first last'' for users, api_key name for api_keys, ''System'' for system actors. Null when the actor row is not resolvable.'
         actorRoleName:
-          type: string
-          nullable: true
+          type:
+          - string
+          - 'null'
           description: Name of the actor's role (e.g. 'Admin', 'Super Admin'). Null when the role row is not resolvable.
         actorIsSuperAdmin:
-          type: boolean
-          nullable: true
+          type:
+          - boolean
+          - 'null'
           description: True when the actor's role slug is 'super-admin'. Used by the UI to render 'Voltair Admin' instead of the underlying user's name.
         timestamp:
           type: number
         before:
-          type: object
-          nullable: true
+          type:
+          - object
+          - 'null'
           additionalProperties: true
           description: Null for create; delta for update; full row for delete
         after:
-          type: object
-          nullable: true
+          type:
+          - object
+          - 'null'
           additionalProperties: true
           description: Full row for create; delta for update; null for delete
-    EventResourceType:
-      type: string
-      enum:
-      - site
-      - cluster
-      - mission
-      - cluster_visit
-      - site_visit
-      - mission_media
-      - asset
-      - defect
-      - site_inspection
-      - asset_inspection
-      - organization
-      - user
-      - role
-      - api_key
-      - webhook
     EventActionType:
       type: string
       enum:
       - create
       - update
       - delete
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
   parameters:
     CursorParam:
       name: cursor
@@ -336,12 +351,6 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
-      schema:
-        type: string
-        format: uuid
   securitySchemes:
     BearerAuth:
       type: http

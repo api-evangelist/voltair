@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.2.0
 info:
-  title: Voltair ApiKeys Missions API
+  title: Voltair Missions API
   version: 0.1.0
   description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
 
@@ -331,18 +331,185 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   schemas:
+    LidarRequirement:
+      type: string
+      enum:
+      - 'yes'
+      - 'no'
+      - any
+    ThermalRequirement:
+      type: string
+      enum:
+      - 640x480
+      - any
+      - 'no'
     PaginationMeta:
       type: object
       required:
       - cursor
       properties:
         cursor:
-          type: string
-          nullable: true
+          type:
+          - string
+          - 'null'
           description: Opaque cursor for the next page; null when no more results
         total:
           type: integer
           description: Total matching results across all pages; included when cheaply computable
+    MissionStatus:
+      type: string
+      enum:
+      - scheduled
+      - canceled
+      - in-progress
+      - recurring
+      - complete
+    SensorRequirement:
+      type: string
+      enum:
+      - hi-def
+      - any
+      - 'no'
+    MissionSitesRequest:
+      type: object
+      properties:
+        siteIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        clusterIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    UpdateMissionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MissionStatus'
+        detailLevel:
+          $ref: '#/components/schemas/DetailLevel'
+        sensors:
+          $ref: '#/components/schemas/SensorRequirements'
+        scheduledFor:
+          type: number
+        estimatedCompletionTime:
+          type: number
+        dueDate:
+          type: number
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        estimatedCost:
+          type: number
+        siteGeometries:
+          type: array
+          items:
+            type: string
+            enum:
+            - point
+            - line
+            - area
+    SensorRequirements:
+      type: object
+      required:
+      - camera
+      - lidar
+      - thermal
+      properties:
+        camera:
+          $ref: '#/components/schemas/SensorRequirement'
+        lidar:
+          $ref: '#/components/schemas/LidarRequirement'
+        thermal:
+          $ref: '#/components/schemas/ThermalRequirement'
+    Recurrence:
+      type: string
+      enum:
+      - daily
+      - weekly
+      - monthly
+      - yearly
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    CreateMissionRequest:
+      type: object
+      required:
+      - name
+      - description
+      - status
+      - detailLevel
+      - sensors
+      - scheduledFor
+      - estimatedCompletionTime
+      - estimatedCost
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MissionStatus'
+        detailLevel:
+          $ref: '#/components/schemas/DetailLevel'
+        sensors:
+          $ref: '#/components/schemas/SensorRequirements'
+        scheduledFor:
+          type: number
+          description: Unix timestamp in milliseconds
+        estimatedCompletionTime:
+          type: number
+          description: Unix timestamp in milliseconds
+        dueDate:
+          type: number
+          description: Unix timestamp in milliseconds
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        estimatedCost:
+          type: number
+        siteGeometries:
+          type: array
+          items:
+            type: string
+            enum:
+            - point
+            - line
+            - area
+        siteIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Individual site IDs to include in the mission
+        clusterIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Cluster IDs; all sites in these clusters will be included
     Mission:
       type: object
       required:
@@ -401,7 +568,9 @@ components:
           type: integer
           description: Total number of active site visits in this mission
         bounds:
-          type: array
+          type:
+          - array
+          - 'null'
           description: 'Bounding box of all active site geometries in this mission,
 
             as [minLng, minLat, maxLng, maxLat]. Null when the mission has
@@ -413,185 +582,46 @@ components:
             type: number
           minItems: 4
           maxItems: 4
-          nullable: true
         deletedAt:
-          type: number
-          nullable: true
+          type:
+          - number
+          - 'null'
         updatedAt:
           type: number
-    CreateMissionRequest:
-      type: object
-      required:
-      - name
-      - description
-      - status
-      - detailLevel
-      - sensors
-      - scheduledFor
-      - estimatedCompletionTime
-      - estimatedCost
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        status:
-          $ref: '#/components/schemas/MissionStatus'
-        detailLevel:
-          $ref: '#/components/schemas/DetailLevel'
-        sensors:
-          $ref: '#/components/schemas/SensorRequirements'
-        scheduledFor:
-          type: number
-          description: Unix timestamp in milliseconds
-        estimatedCompletionTime:
-          type: number
-          description: Unix timestamp in milliseconds
-        dueDate:
-          type: number
-          description: Unix timestamp in milliseconds
-        recurrence:
-          $ref: '#/components/schemas/Recurrence'
-        estimatedCost:
-          type: number
-        siteGeometries:
-          type: array
-          items:
-            type: string
-            enum:
-            - point
-            - line
-            - area
-        siteIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-          description: Individual site IDs to include in the mission
-        clusterIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-          description: Cluster IDs; all sites in these clusters will be included
-    ThermalRequirement:
-      type: string
-      enum:
-      - 640x480
-      - any
-      - 'no'
-    LidarRequirement:
-      type: string
-      enum:
-      - 'yes'
-      - 'no'
-      - any
-    MissionStatus:
-      type: string
-      enum:
-      - scheduled
-      - canceled
-      - in-progress
-      - recurring
-      - complete
-    UpdateMissionRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        status:
-          $ref: '#/components/schemas/MissionStatus'
-        detailLevel:
-          $ref: '#/components/schemas/DetailLevel'
-        sensors:
-          $ref: '#/components/schemas/SensorRequirements'
-        scheduledFor:
-          type: number
-        estimatedCompletionTime:
-          type: number
-        dueDate:
-          type: number
-        recurrence:
-          $ref: '#/components/schemas/Recurrence'
-        estimatedCost:
-          type: number
-        siteGeometries:
-          type: array
-          items:
-            type: string
-            enum:
-            - point
-            - line
-            - area
-    Recurrence:
-      type: string
-      enum:
-      - daily
-      - weekly
-      - monthly
-      - yearly
-    MissionSitesRequest:
-      type: object
-      properties:
-        siteIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-        clusterIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-    ErrorResponse:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
     DetailLevel:
       type: string
       enum:
       - low
       - medium
       - high
-    SensorRequirements:
-      type: object
-      required:
-      - camera
-      - lidar
-      - thermal
-      properties:
-        camera:
-          $ref: '#/components/schemas/SensorRequirement'
-        lidar:
-          $ref: '#/components/schemas/LidarRequirement'
-        thermal:
-          $ref: '#/components/schemas/ThermalRequirement'
-    SensorRequirement:
-      type: string
-      enum:
-      - hi-def
-      - any
-      - 'no'
   responses:
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict (duplicate resource, in-use resource, or undo conflict)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     BadRequest:
       description: Bad request or validation error
       headers:
@@ -626,8 +656,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
+    Unauthorized:
+      description: Authentication required
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -644,48 +674,13 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    Conflict:
-      description: Conflict (duplicate resource, in-use resource, or undo conflict)
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-  parameters:
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
       schema:
         type: string
         format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+  parameters:
     LimitParam:
       name: limit
       in: query
@@ -694,12 +689,20 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
       schema:
         type: string
         format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   securitySchemes:
     BearerAuth:
       type: http

@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.2.0
 info:
-  title: Voltair ApiKeys Inspections API
+  title: Voltair Inspections API
   version: 0.1.0
   description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
 
@@ -306,8 +306,17 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   responses:
-    Forbidden:
-      description: Insufficient permissions
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -326,24 +335,6 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     BadRequest:
       description: Bad request or validation error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -376,7 +367,29 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
     ErrorResponse:
       type: object
       required:
@@ -398,18 +411,6 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type: string
-          nullable: true
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
     AssetInspection:
       type: object
       required:
@@ -437,8 +438,9 @@ components:
           type: string
           format: uuid
         deletedAt:
-          type: number
-          nullable: true
+          type:
+          - number
+          - 'null'
         createdAt:
           type: number
     SiteInspection:
@@ -479,18 +481,26 @@ components:
           - delivered
           description: FSM lifecycle state of this inspection (see the inspections consolidation state machine). Defaults to `planned`. Not yet transitioned by writers in this release.
         status_metadata:
-          type: object
-          nullable: true
+          type:
+          - object
+          - 'null'
           additionalProperties: true
           description: Failure details, legacy provenance, or not-capturable kind; null unless set.
         deletedAt:
-          type: number
-          nullable: true
+          type:
+          - number
+          - 'null'
         createdAt:
           type: number
         not_capturable:
           type: boolean
           description: True only for synthesized "not capturable" placeholder rows returned when `includeUncapturable=true` (the site is tagged `inaccessible` and no media was captured); these have no backing site_inspections row (the id reuses the site id, so do not refetch via GET /inspections/{id}). Absent/false for real inspections.
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
   parameters:
     CursorParam:
       name: cursor
@@ -520,12 +530,6 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
-      schema:
-        type: string
-        format: uuid
   securitySchemes:
     BearerAuth:
       type: http

@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.2.0
 info:
-  title: Voltair ApiKeys Roles API
+  title: Voltair Roles API
   version: 0.1.0
   description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
 
@@ -224,139 +224,34 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
-  schemas:
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type: string
-          nullable: true
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
-    Permission:
-      type: object
-      required:
-      - resource
-      - level
-      properties:
-        resource:
-          $ref: '#/components/schemas/PermissionResource'
-        level:
-          $ref: '#/components/schemas/PermissionLevel'
-    Role:
-      type: object
-      required:
-      - id
-      - name
-      - description
-      - permissions
-      - isSystem
-      - canSwitchOrganizations
-      - deletedAt
-      - createdAt
-      - updatedAt
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-          nullable: true
-          description: NULL for global roles (e.g. super-admin)
-        slug:
-          type: string
-          nullable: true
-          description: Stable identifier for the super-admin role
-        name:
-          type: string
-        description:
-          type: string
-        permissions:
-          type: array
-          items:
-            $ref: '#/components/schemas/Permission'
-        isSystem:
-          type: boolean
-        canSwitchOrganizations:
-          type: boolean
-        deletedAt:
-          type: number
-          nullable: true
-        createdAt:
-          type: number
-        updatedAt:
-          type: number
-    PermissionLevel:
-      type: string
-      enum:
-      - none
-      - read
-      - write
-    CreateRoleRequest:
-      type: object
-      required:
-      - name
-      - permissions
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        permissions:
-          type: array
-          items:
-            $ref: '#/components/schemas/Permission'
-    ErrorResponse:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    UpdateRoleRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        permissions:
-          type: array
-          items:
-            $ref: '#/components/schemas/Permission'
-    PermissionResource:
-      type: string
-      enum:
-      - sites
-      - missions
-      - media
-      - organization
-      - users
-      - roles
-      - billing
-      - developer
-      - events
-      - transactions
   responses:
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict (duplicate resource, in-use resource, or undo conflict)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     BadRequest:
       description: Bad request or validation error
       headers:
@@ -391,8 +286,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
+    Unauthorized:
+      description: Authentication required
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -409,48 +304,149 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    Conflict:
-      description: Conflict (duplicate resource, in-use resource, or undo conflict)
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-  parameters:
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
+  schemas:
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    Role:
+      type: object
+      required:
+      - id
+      - name
+      - description
+      - permissions
+      - isSystem
+      - canSwitchOrganizations
+      - deletedAt
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: NULL for global roles (e.g. super-admin)
+        slug:
+          type:
+          - string
+          - 'null'
+          description: Stable identifier for the super-admin role
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+        isSystem:
+          type: boolean
+        canSwitchOrganizations:
+          type: boolean
+        deletedAt:
+          type:
+          - number
+          - 'null'
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+    PermissionLevel:
+      type: string
+      enum:
+      - none
+      - read
+      - write
+    PermissionResource:
+      type: string
+      enum:
+      - sites
+      - missions
+      - media
+      - organization
+      - users
+      - roles
+      - billing
+      - developer
+      - events
+      - transactions
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    UpdateRoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+    Permission:
+      type: object
+      required:
+      - resource
+      - level
+      properties:
+        resource:
+          $ref: '#/components/schemas/PermissionResource'
+        level:
+          $ref: '#/components/schemas/PermissionLevel'
+    CreateRoleRequest:
+      type: object
+      required:
+      - name
+      - permissions
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
       schema:
         type: string
         format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+  parameters:
     LimitParam:
       name: limit
       in: query
@@ -459,12 +455,20 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
       schema:
         type: string
         format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   securitySchemes:
     BearerAuth:
       type: http

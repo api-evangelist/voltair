@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.2.0
 info:
-  title: Voltair ApiKeys Identity API
+  title: Voltair Identity API
   version: 0.1.0
   description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
 
@@ -55,7 +55,54 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
+  responses:
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    PermissionResource:
+      type: string
+      enum:
+      - sites
+      - missions
+      - media
+      - organization
+      - users
+      - roles
+      - billing
+      - developer
+      - events
+      - transactions
+    UserStatus:
+      type: string
+      enum:
+      - active
+      - invited
+      - deactivated
     User:
       type: object
       required:
@@ -91,28 +138,21 @@ components:
         status:
           $ref: '#/components/schemas/UserStatus'
         invitedAt:
-          type: number
-          nullable: true
+          type:
+          - number
+          - 'null'
         joinedAt:
-          type: number
-          nullable: true
+          type:
+          - number
+          - 'null'
         deletedAt:
-          type: number
-          nullable: true
+          type:
+          - number
+          - 'null'
         createdAt:
           type: number
         updatedAt:
           type: number
-    Permission:
-      type: object
-      required:
-      - resource
-      - level
-      properties:
-        resource:
-          $ref: '#/components/schemas/PermissionResource'
-        level:
-          $ref: '#/components/schemas/PermissionLevel'
     ErrorResponse:
       type: object
       required:
@@ -134,12 +174,6 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    UserStatus:
-      type: string
-      enum:
-      - active
-      - invited
-      - deactivated
     Role:
       type: object
       required:
@@ -157,13 +191,15 @@ components:
           type: string
           format: uuid
         organizationId:
-          type: string
+          type:
+          - string
+          - 'null'
           format: uuid
-          nullable: true
           description: NULL for global roles (e.g. super-admin)
         slug:
-          type: string
-          nullable: true
+          type:
+          - string
+          - 'null'
           description: Stable identifier for the super-admin role
         name:
           type: string
@@ -178,59 +214,29 @@ components:
         canSwitchOrganizations:
           type: boolean
         deletedAt:
-          type: number
-          nullable: true
+          type:
+          - number
+          - 'null'
         createdAt:
           type: number
         updatedAt:
           type: number
-    PermissionResource:
-      type: string
-      enum:
-      - sites
-      - missions
-      - media
-      - organization
-      - users
-      - roles
-      - billing
-      - developer
-      - events
-      - transactions
     PermissionLevel:
       type: string
       enum:
       - none
       - read
       - write
-  responses:
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
+    Permission:
+      type: object
+      required:
+      - resource
+      - level
+      properties:
+        resource:
+          $ref: '#/components/schemas/PermissionResource'
+        level:
+          $ref: '#/components/schemas/PermissionLevel'
   headers:
     XRequestId:
       description: Unique request identifier (UUID)

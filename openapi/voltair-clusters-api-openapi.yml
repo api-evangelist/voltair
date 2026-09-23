@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.2.0
 info:
-  title: Voltair ApiKeys Clusters API
+  title: Voltair Clusters API
   version: 0.1.0
   description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
 
@@ -278,23 +278,85 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   schemas:
+    GeometryCounts:
+      type: object
+      required:
+      - point
+      - line
+      - area
+      properties:
+        point:
+          type: integer
+        line:
+          type: integer
+        area:
+          type: integer
+    PolygonGeometry:
+      type: object
+      required:
+      - type
+      - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+          - Polygon
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: array
+              items:
+                type: number
+              minItems: 2
+              maxItems: 3
+            minItems: 4
     PaginationMeta:
       type: object
       required:
       - cursor
       properties:
         cursor:
-          type: string
-          nullable: true
+          type:
+          - string
+          - 'null'
           description: Opaque cursor for the next page; null when no more results
         total:
           type: integer
           description: Total matching results across all pages; included when cheaply computable
-    ClusterLevel:
-      type: integer
-      minimum: 1
-      maximum: 3
-      description: 1 = coarsest, 3 = finest
+    UpdateClusterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+        parentId:
+          type: string
+          format: uuid
+        level:
+          $ref: '#/components/schemas/ClusterLevel'
+        siteTypes:
+          type: array
+          items:
+            type: string
+        geometryCounts:
+          $ref: '#/components/schemas/GeometryCounts'
+        centroid:
+          type: array
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+        bounds:
+          type: array
+          items:
+            type: number
+          minItems: 4
+          maxItems: 4
+        geometry:
+          $ref: '#/components/schemas/ClusterGeometry'
     MultiLineStringGeometry:
       type: object
       required:
@@ -316,81 +378,6 @@ components:
               minItems: 2
               maxItems: 3
             minItems: 2
-    ClusterGeometry:
-      description: GeoJSON geometry for clusters (Polygon, LineString, or MultiLineString)
-      oneOf:
-      - $ref: '#/components/schemas/PolygonGeometry'
-      - $ref: '#/components/schemas/LineStringGeometry'
-      - $ref: '#/components/schemas/MultiLineStringGeometry'
-      discriminator:
-        propertyName: type
-        mapping:
-          Polygon: '#/components/schemas/PolygonGeometry'
-          LineString: '#/components/schemas/LineStringGeometry'
-          MultiLineString: '#/components/schemas/MultiLineStringGeometry'
-    Cluster:
-      type: object
-      required:
-      - id
-      - organizationId
-      - count
-      - parentId
-      - level
-      - siteTypes
-      - geometryCounts
-      - name
-      - centroid
-      - bounds
-      - geometry
-      - deletedAt
-      - createdAt
-      - updatedAt
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        count:
-          type: integer
-        parentId:
-          type: string
-          format: uuid
-          nullable: true
-        level:
-          $ref: '#/components/schemas/ClusterLevel'
-        siteTypes:
-          type: array
-          items:
-            type: string
-        geometryCounts:
-          $ref: '#/components/schemas/GeometryCounts'
-        name:
-          type: string
-        centroid:
-          type: array
-          description: '[longitude, latitude]'
-          items:
-            type: number
-          minItems: 2
-          maxItems: 2
-        bounds:
-          type: array
-          description: '[minLng, minLat, maxLng, maxLat]'
-          items:
-            type: number
-          minItems: 4
-          maxItems: 4
-        geometry:
-          $ref: '#/components/schemas/ClusterGeometry'
-        deletedAt:
-          type: number
-          nullable: true
-        createdAt:
-          type: number
-        updatedAt:
-          type: number
     ErrorResponse:
       type: object
       required:
@@ -451,51 +438,23 @@ components:
           maxItems: 4
         geometry:
           $ref: '#/components/schemas/ClusterGeometry'
-    GeometryCounts:
-      type: object
-      required:
-      - point
-      - line
-      - area
-      properties:
-        point:
-          type: integer
-        line:
-          type: integer
-        area:
-          type: integer
-    UpdateClusterRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        count:
-          type: integer
-        parentId:
-          type: string
-          format: uuid
-        level:
-          $ref: '#/components/schemas/ClusterLevel'
-        siteTypes:
-          type: array
-          items:
-            type: string
-        geometryCounts:
-          $ref: '#/components/schemas/GeometryCounts'
-        centroid:
-          type: array
-          items:
-            type: number
-          minItems: 2
-          maxItems: 2
-        bounds:
-          type: array
-          items:
-            type: number
-          minItems: 4
-          maxItems: 4
-        geometry:
-          $ref: '#/components/schemas/ClusterGeometry'
+    ClusterGeometry:
+      description: GeoJSON geometry for clusters (Polygon, LineString, or MultiLineString)
+      oneOf:
+      - $ref: '#/components/schemas/PolygonGeometry'
+      - $ref: '#/components/schemas/LineStringGeometry'
+      - $ref: '#/components/schemas/MultiLineStringGeometry'
+      discriminator:
+        propertyName: type
+        mapping:
+          Polygon: '#/components/schemas/PolygonGeometry'
+          LineString: '#/components/schemas/LineStringGeometry'
+          MultiLineString: '#/components/schemas/MultiLineStringGeometry'
+    ClusterLevel:
+      type: integer
+      minimum: 1
+      maximum: 3
+      description: 1 = coarsest, 3 = finest
     LineStringGeometry:
       type: object
       required:
@@ -515,28 +474,99 @@ components:
             minItems: 2
             maxItems: 3
           minItems: 2
-    PolygonGeometry:
+    Cluster:
       type: object
       required:
-      - type
-      - coordinates
+      - id
+      - organizationId
+      - count
+      - parentId
+      - level
+      - siteTypes
+      - geometryCounts
+      - name
+      - centroid
+      - bounds
+      - geometry
+      - deletedAt
+      - createdAt
+      - updatedAt
       properties:
-        type:
+        id:
           type: string
-          enum:
-          - Polygon
-        coordinates:
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        count:
+          type: integer
+        parentId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        level:
+          $ref: '#/components/schemas/ClusterLevel'
+        siteTypes:
           type: array
           items:
-            type: array
-            items:
-              type: array
-              items:
-                type: number
-              minItems: 2
-              maxItems: 3
-            minItems: 4
+            type: string
+        geometryCounts:
+          $ref: '#/components/schemas/GeometryCounts'
+        name:
+          type: string
+        centroid:
+          type: array
+          description: '[longitude, latitude]'
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+        bounds:
+          type: array
+          description: '[minLng, minLat, maxLng, maxLat]'
+          items:
+            type: number
+          minItems: 4
+          maxItems: 4
+        geometry:
+          $ref: '#/components/schemas/ClusterGeometry'
+        deletedAt:
+          type:
+          - number
+          - 'null'
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
   responses:
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict (duplicate resource, in-use resource, or undo conflict)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     BadRequest:
       description: Bad request or validation error
       headers:
@@ -571,8 +601,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
+    Unauthorized:
+      description: Authentication required
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -589,48 +619,13 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    Conflict:
-      description: Conflict (duplicate resource, in-use resource, or undo conflict)
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-  parameters:
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
       schema:
         type: string
         format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+  parameters:
     LimitParam:
       name: limit
       in: query
@@ -639,12 +634,20 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
       schema:
         type: string
         format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   securitySchemes:
     BearerAuth:
       type: http

@@ -1,6 +1,6 @@
-openapi: 3.0.3
+openapi: 3.2.0
 info:
-  title: Voltair ApiKeys Media API
+  title: Voltair Media API
   version: 0.1.0
   description: 'Infrastructure inspection platform API. All endpoints are scoped to the authenticated organization via Bearer JWT or API key.
 
@@ -82,9 +82,7 @@ paths:
       summary: Create a media row
       description: 'Creates a mission_media row and returns it along with a short-lived
 
-        presigned S3 upload URL the caller uses to PUT the actual object.
-
-        '
+        presigned S3 upload URL the caller uses to PUT the actual object.'
       parameters:
       - $ref: '#/components/parameters/IdempotencyKeyHeader'
       requestBody:
@@ -140,11 +138,9 @@ paths:
 
         that carries its own auth proof in the query string, so a plain
 
-        `<a href download>` click in the browser can trigger the download
+        `` click in the browser can trigger the download
 
-        without forging an Authorization header.
-
-        '
+        without forging an Authorization header.'
       requestBody:
         required: true
         content:
@@ -192,11 +188,9 @@ paths:
 
         from S3 — no client-side file-count limits or cross-origin navigation.
 
-        Entries are organised as `<siteName>/<ISO-timestamp>.<ext>` with
+        Entries are organised as `/.` with
 
-        unassigned media grouped under `_unassigned/`.
-
-        '
+        unassigned media grouped under `_unassigned/`.'
       parameters:
       - name: missionId
         in: query
@@ -283,11 +277,9 @@ paths:
 
         lightbox and inspection-row download buttons to avoid the CORS
 
-        and cross-origin `<a download>` limitations of going directly
+        and cross-origin `` limitations of going directly
 
-        to CloudFront.
-
-        '
+        to CloudFront.'
       responses:
         '200':
           description: Raw media bytes
@@ -338,9 +330,7 @@ paths:
 
         (non-CVAT-sourced evidence), the original object is streamed
 
-        unmodified. Replaces the retired stored crop derivatives.
-
-        '
+        unmodified. Replaces the retired stored crop derivatives.'
       responses:
         '200':
           description: Annotated crop JPEG (or the original object when no bbox)
@@ -423,9 +413,7 @@ paths:
 
         actor.type == "user", the `actor.user` object contains the first
 
-        name, last name, and email of the commenter.
-
-        '
+        name, last name, and email of the commenter.'
       responses:
         '200':
           description: Success
@@ -501,7 +489,91 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
+  responses:
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
     CreateMediaRequest:
       type: object
       required:
@@ -532,19 +604,22 @@ components:
         geoLocation:
           allOf:
           - $ref: '#/components/schemas/GeoLocation'
-          nullable: true
-    PaginationMeta:
+    GimbalOrientation:
       type: object
       required:
-      - cursor
+      - yaw
+      - pitch
+      - roll
       properties:
-        cursor:
-          type: string
-          nullable: true
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
+        yaw:
+          type: number
+          description: Gimbal yaw in degrees
+        pitch:
+          type: number
+          description: Gimbal pitch in degrees
+        roll:
+          type: number
+          description: Gimbal roll in degrees
     GeoPathPoint:
       type: object
       required:
@@ -560,13 +635,6 @@ components:
           type: number
         altitude:
           type: number
-    CreateMediaCommentRequest:
-      type: object
-      required:
-      - text
-      properties:
-        text:
-          type: string
     GeoLocation:
       type: object
       required:
@@ -579,49 +647,6 @@ components:
           type: number
         altitude:
           type: number
-    CaptureType:
-      type: string
-      nullable: true
-      enum:
-      - rgb
-      - thermal
-      description: Spectral modality of the frame, served directly from mission_media.capture_type (the single source of truth). null means the modality is unknown (not yet classified); it is never coerced to rgb.
-    MediaType:
-      type: string
-      enum:
-      - image
-      - video
-    Resolution:
-      type: object
-      required:
-      - width
-      - height
-      properties:
-        width:
-          type: integer
-        height:
-          type: integer
-    ErrorResponse:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
     CreateMediaDownloadUrlRequest:
       type: object
       required:
@@ -653,6 +678,39 @@ components:
             into the signed URL''s HMAC claims.
 
             '
+    CreateMediaCommentRequest:
+      type: object
+      required:
+      - text
+      properties:
+        text:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    MediaType:
+      type: string
+      enum:
+      - image
+      - video
     MissionMedia:
       type: object
       required:
@@ -716,7 +774,6 @@ components:
         geoLocation:
           allOf:
           - $ref: '#/components/schemas/GeoLocation'
-          nullable: true
           description: Required for images; null for video
         duration:
           type: number
@@ -727,8 +784,9 @@ components:
             $ref: '#/components/schemas/GeoPathPoint'
           description: Video flight path; null for images
         deletedAt:
-          type: number
-          nullable: true
+          type:
+          - number
+          - 'null'
         createdAt:
           type: number
         updatedAt:
@@ -737,19 +795,23 @@ components:
           type: integer
           description: Count of comments attached to this media row.
         thermalRange:
-          type: object
-          nullable: true
+          type:
+          - object
+          - 'null'
           description: Compact Fahrenheit min/max thermal scale for lightbox overlays, derived from mission_media.metadata thermal stats. This is DATA, not a modality classifier (see captureType). null when the frame has no thermal stats, so the overlay simply hides.
           properties:
             minTempF:
-              type: number
-              nullable: true
+              type:
+              - number
+              - 'null'
             maxTempF:
-              type: number
-              nullable: true
+              type:
+              - number
+              - 'null'
         thermalDisplayRamp:
-          type: array
-          nullable: true
+          type:
+          - array
+          - 'null'
           description: 'Measured per-image display ramp: ordered hex color stops (cold->hot, e.g. ["#151515", ..., "#f7f7f7"]) recovered by correlating the frame''s temperature grid with its rendered pixels. The client renders these stops directly as the thermal scale-bar gradient (top=hot), so the bar matches the frame''s actual pixels for any palette — including Skydio''s per-image isotherm overlay, which a palette name cannot describe. This is a DISPLAY fact, distinct from captureType (spectral modality) and thermalRange (temperature data). null when the frame has no measured ramp, so the overlay hides.'
           items:
             type: string
@@ -788,8 +850,9 @@ components:
               - api_key
               - system
             user:
-              nullable: true
-              type: object
+              type:
+              - object
+              - 'null'
               required:
               - id
               - firstName
@@ -806,110 +869,34 @@ components:
                 email:
                   type: string
                 avatarUrl:
-                  type: string
-                  nullable: true
-    GimbalOrientation:
+                  type:
+                  - string
+                  - 'null'
+    Resolution:
       type: object
       required:
-      - yaw
-      - pitch
-      - roll
+      - width
+      - height
       properties:
-        yaw:
-          type: number
-          description: Gimbal yaw in degrees
-        pitch:
-          type: number
-          description: Gimbal pitch in degrees
-        roll:
-          type: number
-          description: Gimbal roll in degrees
-  responses:
-    BadRequest:
-      description: Bad request or validation error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    TooManyRequests:
-      description: Rate limit exceeded
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-        X-RateLimit-Limit:
-          schema:
-            type: integer
-          description: Maximum requests per window
-        X-RateLimit-Remaining:
-          schema:
-            type: integer
-          description: Requests remaining in current window
-        X-RateLimit-Reset:
-          schema:
-            type: number
-          description: Unix timestamp (ms) when the window resets
-        Retry-After:
-          schema:
-            type: integer
-          description: Seconds until the next rate limit window
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-  parameters:
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
+        width:
+          type: integer
+        height:
+          type: integer
+    CaptureType:
+      type:
+      - string
+      - 'null'
+      enum:
+      - rgb
+      - thermal
+      description: Spectral modality of the frame, served directly from mission_media.capture_type (the single source of truth). null means the modality is unknown (not yet classified); it is never coerced to rgb.
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
       schema:
         type: string
         format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+  parameters:
     LimitParam:
       name: limit
       in: query
@@ -918,12 +905,20 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
       schema:
         type: string
         format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   securitySchemes:
     BearerAuth:
       type: http
