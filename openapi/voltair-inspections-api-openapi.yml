@@ -305,6 +305,12 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
   responses:
     InternalError:
       description: Internal server error
@@ -315,8 +321,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
+    NotFound:
+      description: Resource not found
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -324,8 +330,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -367,29 +382,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
   schemas:
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
     ErrorResponse:
       type: object
       required:
@@ -411,6 +404,19 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
     AssetInspection:
       type: object
       required:
@@ -495,19 +501,15 @@ components:
         not_capturable:
           type: boolean
           description: True only for synthesized "not capturable" placeholder rows returned when `includeUncapturable=true` (the site is tagged `inaccessible` and no media was captured); these have no backing site_inspections row (the id reuses the site id, so do not refetch via GET /inspections/{id}). Absent/false for real inspections.
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
-      schema:
-        type: string
-        format: uuid
   parameters:
-    CursorParam:
-      name: cursor
+    LimitParam:
+      name: limit
       in: query
       schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
     MediaSourceFilter:
       name: mediaSource[]
       in: query
@@ -522,14 +524,12 @@ components:
           - contractor
           - cvat_crop
       description: Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint.
-    LimitParam:
-      name: limit
+    CursorParam:
+      name: cursor
       in: query
       schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-      description: Page size (default 50, max 200)
+        type: string
+      description: Opaque pagination cursor from a previous response
   securitySchemes:
     BearerAuth:
       type: http

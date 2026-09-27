@@ -489,121 +489,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
-  responses:
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    BadRequest:
-      description: Bad request or validation error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    TooManyRequests:
-      description: Rate limit exceeded
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-        X-RateLimit-Limit:
-          schema:
-            type: integer
-          description: Maximum requests per window
-        X-RateLimit-Remaining:
-          schema:
-            type: integer
-          description: Requests remaining in current window
-        X-RateLimit-Reset:
-          schema:
-            type: number
-          description: Unix timestamp (ms) when the window resets
-        Retry-After:
-          schema:
-            type: integer
-          description: Seconds until the next rate limit window
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
   schemas:
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
-    CreateMediaRequest:
-      type: object
-      required:
-      - missionId
-      - vehicleId
-      - source
-      - mediaType
-      - capturedAt
-      - sizeBytes
-      properties:
-        missionId:
-          type: string
-          format: uuid
-        vehicleId:
-          type: string
-          format: uuid
-        source:
-          type: string
-          description: Free-form tag describing how the media reached the API (e.g. "contractor-upload", "screenshot").
-        mediaType:
-          $ref: '#/components/schemas/MediaType'
-        capturedAt:
-          type: number
-          description: Unix-ms timestamp when the media was captured.
-        sizeBytes:
-          type: integer
-          description: Size of the S3 object in bytes (used by the zip endpoint's progress UI).
-        geoLocation:
-          allOf:
-          - $ref: '#/components/schemas/GeoLocation'
     GimbalOrientation:
       type: object
       required:
@@ -620,21 +506,27 @@ components:
         roll:
           type: number
           description: Gimbal roll in degrees
-    GeoPathPoint:
+    ErrorResponse:
       type: object
       required:
-      - timestampSec
-      - lat
-      - lng
+      - error
       properties:
-        timestampSec:
-          type: number
-        lat:
-          type: number
-        lng:
-          type: number
-        altitude:
-          type: number
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
     GeoLocation:
       type: object
       required:
@@ -647,6 +539,32 @@ components:
           type: number
         altitude:
           type: number
+    MediaType:
+      type: string
+      enum:
+      - image
+      - video
+    CaptureType:
+      type:
+      - string
+      - 'null'
+      enum:
+      - rgb
+      - thermal
+      description: Spectral modality of the frame, served directly from mission_media.capture_type (the single source of truth). null means the modality is unknown (not yet classified); it is never coerced to rgb.
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
     CreateMediaDownloadUrlRequest:
       type: object
       required:
@@ -678,39 +596,6 @@ components:
             into the signed URL''s HMAC claims.
 
             '
-    CreateMediaCommentRequest:
-      type: object
-      required:
-      - text
-      properties:
-        text:
-          type: string
-    ErrorResponse:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    MediaType:
-      type: string
-      enum:
-      - image
-      - video
     MissionMedia:
       type: object
       required:
@@ -815,6 +700,68 @@ components:
           description: 'Measured per-image display ramp: ordered hex color stops (cold->hot, e.g. ["#151515", ..., "#f7f7f7"]) recovered by correlating the frame''s temperature grid with its rendered pixels. The client renders these stops directly as the thermal scale-bar gradient (top=hot), so the bar matches the frame''s actual pixels for any palette — including Skydio''s per-image isotherm overlay, which a palette name cannot describe. This is a DISPLAY fact, distinct from captureType (spectral modality) and thermalRange (temperature data). null when the frame has no measured ramp, so the overlay hides.'
           items:
             type: string
+    GeoPathPoint:
+      type: object
+      required:
+      - timestampSec
+      - lat
+      - lng
+      properties:
+        timestampSec:
+          type: number
+        lat:
+          type: number
+        lng:
+          type: number
+        altitude:
+          type: number
+    CreateMediaCommentRequest:
+      type: object
+      required:
+      - text
+      properties:
+        text:
+          type: string
+    CreateMediaRequest:
+      type: object
+      required:
+      - missionId
+      - vehicleId
+      - source
+      - mediaType
+      - capturedAt
+      - sizeBytes
+      properties:
+        missionId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        source:
+          type: string
+          description: Free-form tag describing how the media reached the API (e.g. "contractor-upload", "screenshot").
+        mediaType:
+          $ref: '#/components/schemas/MediaType'
+        capturedAt:
+          type: number
+          description: Unix-ms timestamp when the media was captured.
+        sizeBytes:
+          type: integer
+          description: Size of the S3 object in bytes (used by the zip endpoint's progress UI).
+        geoLocation:
+          allOf:
+          - $ref: '#/components/schemas/GeoLocation'
+    Resolution:
+      type: object
+      required:
+      - width
+      - height
+      properties:
+        width:
+          type: integer
+        height:
+          type: integer
     MediaComment:
       type: object
       required:
@@ -872,39 +819,13 @@ components:
                   type:
                   - string
                   - 'null'
-    Resolution:
-      type: object
-      required:
-      - width
-      - height
-      properties:
-        width:
-          type: integer
-        height:
-          type: integer
-    CaptureType:
-      type:
-      - string
-      - 'null'
-      enum:
-      - rgb
-      - thermal
-      description: Spectral modality of the frame, served directly from mission_media.capture_type (the single source of truth). null means the modality is unknown (not yet classified); it is never coerced to rgb.
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
-      schema:
-        type: string
-        format: uuid
   parameters:
-    LimitParam:
-      name: limit
+    CursorParam:
+      name: cursor
       in: query
       schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-      description: Page size (default 50, max 200)
+        type: string
+      description: Opaque pagination cursor from a previous response
     IdempotencyKeyHeader:
       name: Idempotency-Key
       in: header
@@ -913,12 +834,91 @@ components:
         type: string
         format: uuid
       description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
-    CursorParam:
-      name: cursor
+    LimitParam:
+      name: limit
       in: query
       schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+  responses:
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
         type: string
-      description: Opaque pagination cursor from a previous response
+        format: uuid
   securitySchemes:
     BearerAuth:
       type: http

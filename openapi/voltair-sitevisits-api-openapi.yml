@@ -127,6 +127,12 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
   responses:
     InternalError:
       description: Internal server error
@@ -137,8 +143,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
+    NotFound:
+      description: Resource not found
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -146,8 +152,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -189,110 +204,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
   schemas:
-    SiteVisitStatus:
-      type: string
-      enum:
-      - pending
-      - in-progress
-      - complete
-      - skipped
-      - failed
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
-    ErrorResponse:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    ClusterVisitStatus:
-      type: string
-      enum:
-      - pending
-      - in-progress
-      - complete
-    CompressedVisitsResponse:
-      type: object
-      required:
-      - data
-      - meta
-      properties:
-        data:
-          type: array
-          description: 'Mixed array of ClusterVisit and SiteVisit objects. Each item includes a `type` field: `"clusterVisit"` or `"siteVisit"`. ClusterVisit items represent the highest-level clusters whose parent cluster does not have a ClusterVisit in the mission. SiteVisit items are unclustered site visits.
-
-            '
-          items:
-            oneOf:
-            - allOf:
-              - type: object
-                required:
-                - type
-                properties:
-                  type:
-                    type: string
-                    enum:
-                    - clusterVisit
-              - $ref: '#/components/schemas/ClusterVisit'
-            - allOf:
-              - type: object
-                required:
-                - type
-                properties:
-                  type:
-                    type: string
-                    enum:
-                    - siteVisit
-              - $ref: '#/components/schemas/SiteVisit'
-            discriminator:
-              propertyName: type
-              mapping:
-                clusterVisit: '#/components/schemas/ClusterVisit'
-                siteVisit: '#/components/schemas/SiteVisit'
-        meta:
-          type: object
-          required:
-          - totalSiteCount
-          properties:
-            totalSiteCount:
-              type: integer
-              description: Total number of sites represented across all items
     SiteVisit:
       type: object
       required:
@@ -353,6 +265,73 @@ components:
           - 'null'
         createdAt:
           type: number
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    CompressedVisitsResponse:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          type: array
+          description: 'Mixed array of ClusterVisit and SiteVisit objects. Each item includes a `type` field: `"clusterVisit"` or `"siteVisit"`. ClusterVisit items represent the highest-level clusters whose parent cluster does not have a ClusterVisit in the mission. SiteVisit items are unclustered site visits.
+
+            '
+          items:
+            oneOf:
+            - allOf:
+              - type: object
+                required:
+                - type
+                properties:
+                  type:
+                    type: string
+                    enum:
+                    - clusterVisit
+              - $ref: '#/components/schemas/ClusterVisit'
+            - allOf:
+              - type: object
+                required:
+                - type
+                properties:
+                  type:
+                    type: string
+                    enum:
+                    - siteVisit
+              - $ref: '#/components/schemas/SiteVisit'
+            discriminator:
+              propertyName: type
+              mapping:
+                clusterVisit: '#/components/schemas/ClusterVisit'
+                siteVisit: '#/components/schemas/SiteVisit'
+        meta:
+          type: object
+          required:
+          - totalSiteCount
+          properties:
+            totalSiteCount:
+              type: integer
+              description: Total number of sites represented across all items
     ClusterVisit:
       type: object
       required:
@@ -393,19 +372,34 @@ components:
           type: number
         updatedAt:
           type: number
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
-      schema:
-        type: string
-        format: uuid
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    ClusterVisitStatus:
+      type: string
+      enum:
+      - pending
+      - in-progress
+      - complete
+    SiteVisitStatus:
+      type: string
+      enum:
+      - pending
+      - in-progress
+      - complete
+      - skipped
+      - failed
   parameters:
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
     LimitParam:
       name: limit
       in: query
@@ -414,6 +408,12 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   securitySchemes:
     BearerAuth:
       type: http
