@@ -562,7 +562,266 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
+  responses:
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  parameters:
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   schemas:
+    Asset:
+      type: object
+      required:
+      - id
+      - organizationId
+      - siteId
+      - name
+      - priority
+      - deletedAt
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        siteId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        priority:
+          $ref: '#/components/schemas/AssetPriority'
+        deletedAt:
+          type:
+          - number
+          - 'null'
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+    AssetPriority:
+      type: string
+      enum:
+      - high
+      - medium
+      - low
+      - none
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    DefectEvidence:
+      type: object
+      required:
+      - id
+      - defectId
+      - reviewUncertain
+      - deletedAt
+      - createdAt
+      description: 'Per-CVAT-shape evidence row tied to a Defect (merged defect).
+
+        Multiple rows for the same Defect mean the same defect was
+
+        annotated across multiple photos. Returned from the API only when
+
+        explicitly expanded.
+
+        '
+      properties:
+        id:
+          type: string
+          format: uuid
+        defectId:
+          type: string
+          format: uuid
+        cvatShapeUid:
+          type:
+          - string
+          - 'null'
+          description: Stable id `<cvat_task_id>:<cvat_shape_id>` of the source CVAT shape. NULL on non-CVAT-sourced rows (none today).
+        evidenceMediaId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: Original (uncropped) mission_media row that the lineman annotated.
+        bbox:
+          type:
+          - object
+          - 'null'
+          description: 'Bounding box in evidence_media_id pixel coordinates: {"x1": int, "y1": int, "x2": int, "y2": int}.'
+        description:
+          type:
+          - string
+          - 'null'
+          description: Free-form text the lineman attached to this specific CVAT shape (Comment attribute on regular labels, Description on the Other catch-all).
+        reviewUncertain:
+          type: boolean
+          description: True when this shipped evidence crop came from QA consensus=agreed_uncertain. The customer platform rolls this up to an Uncertain tag on the merged defect.
+        deletedAt:
+          type:
+          - number
+          - 'null'
+        createdAt:
+          type: number
+    DefectPriorityMapping:
+      type: object
+      required:
+      - id
+      - organizationId
+      - mapping
+      - version
+      - isActive
+      description: 'Per-org JSONB rule set mapping a CVAT
+
+        `(Equipment, Type, Defect)` tuple to an `asset_type` and a
+
+        `priority` integer (1..4). One active row per organization at a
+
+        time; saving a new version deactivates the prior active row.
+
+        '
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        mapping:
+          type: object
+          description: '`{ "<Equipment>": { "<Type>": { "asset_type": "<slug>", "defects": { "<Defect>": <int 1-4> } } } }`.
+
+            Use `"n/a"` as the `<Type>` key for CVAT labels with no
+
+            real subtype.
+
+            '
+        version:
+          type: integer
+        isActive:
+          type: boolean
     Defect:
       type: object
       required:
@@ -668,271 +927,12 @@ components:
           description: Populated only when `evidence` is requested via expand[]. Otherwise omitted.
           items:
             $ref: '#/components/schemas/DefectEvidence'
-    ErrorResponse:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    AssetPriority:
-      type: string
-      enum:
-      - high
-      - medium
-      - low
-      - none
-    DefectPriorityMapping:
-      type: object
-      required:
-      - id
-      - organizationId
-      - mapping
-      - version
-      - isActive
-      description: 'Per-org JSONB rule set mapping a CVAT
-
-        `(Equipment, Type, Defect)` tuple to an `asset_type` and a
-
-        `priority` integer (1..4). One active row per organization at a
-
-        time; saving a new version deactivates the prior active row.
-
-        '
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        mapping:
-          type: object
-          description: '`{ "<Equipment>": { "<Type>": { "asset_type": "<slug>", "defects": { "<Defect>": <int 1-4> } } } }`.
-
-            Use `"n/a"` as the `<Type>` key for CVAT labels with no
-
-            real subtype.
-
-            '
-        version:
-          type: integer
-        isActive:
-          type: boolean
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
-    Asset:
-      type: object
-      required:
-      - id
-      - organizationId
-      - siteId
-      - name
-      - priority
-      - deletedAt
-      - createdAt
-      - updatedAt
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        siteId:
-          type: string
-          format: uuid
-        name:
-          type: string
-        priority:
-          $ref: '#/components/schemas/AssetPriority'
-        deletedAt:
-          type:
-          - number
-          - 'null'
-        createdAt:
-          type: number
-        updatedAt:
-          type: number
-    DefectEvidence:
-      type: object
-      required:
-      - id
-      - defectId
-      - reviewUncertain
-      - deletedAt
-      - createdAt
-      description: 'Per-CVAT-shape evidence row tied to a Defect (merged defect).
-
-        Multiple rows for the same Defect mean the same defect was
-
-        annotated across multiple photos. Returned from the API only when
-
-        explicitly expanded.
-
-        '
-      properties:
-        id:
-          type: string
-          format: uuid
-        defectId:
-          type: string
-          format: uuid
-        cvatShapeUid:
-          type:
-          - string
-          - 'null'
-          description: Stable id `<cvat_task_id>:<cvat_shape_id>` of the source CVAT shape. NULL on non-CVAT-sourced rows (none today).
-        evidenceMediaId:
-          type:
-          - string
-          - 'null'
-          format: uuid
-          description: Original (uncropped) mission_media row that the lineman annotated.
-        bbox:
-          type:
-          - object
-          - 'null'
-          description: 'Bounding box in evidence_media_id pixel coordinates: {"x1": int, "y1": int, "x2": int, "y2": int}.'
-        description:
-          type:
-          - string
-          - 'null'
-          description: Free-form text the lineman attached to this specific CVAT shape (Comment attribute on regular labels, Description on the Other catch-all).
-        reviewUncertain:
-          type: boolean
-          description: True when this shipped evidence crop came from QA consensus=agreed_uncertain. The customer platform rolls this up to an Uncertain tag on the merged defect.
-        deletedAt:
-          type:
-          - number
-          - 'null'
-        createdAt:
-          type: number
   headers:
     XRequestId:
       description: Unique request identifier (UUID)
       schema:
         type: string
         format: uuid
-  responses:
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    BadRequest:
-      description: Bad request or validation error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    TooManyRequests:
-      description: Rate limit exceeded
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-        X-RateLimit-Limit:
-          schema:
-            type: integer
-          description: Maximum requests per window
-        X-RateLimit-Remaining:
-          schema:
-            type: integer
-          description: Requests remaining in current window
-        X-RateLimit-Reset:
-          schema:
-            type: number
-          description: Unix timestamp (ms) when the window resets
-        Retry-After:
-          schema:
-            type: integer
-          description: Seconds until the next rate limit window
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-  parameters:
-    LimitParam:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-      description: Page size (default 50, max 200)
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
-      schema:
-        type: string
-        format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
   securitySchemes:
     BearerAuth:
       type: http

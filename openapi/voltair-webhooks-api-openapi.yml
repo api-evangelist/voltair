@@ -352,17 +352,11 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   schemas:
-    WebhookEvent:
-      type: string
-      enum:
-      - mission.scheduled
-      - mission.started
-      - mission.completed
-      - mission.failed
-      - processing.started
-      - processing.completed
-    UpdateWebhookRequest:
+    CreateWebhookRequest:
       type: object
+      required:
+      - url
+      - events
       properties:
         url:
           type: string
@@ -372,6 +366,15 @@ components:
             $ref: '#/components/schemas/WebhookEvent'
         enabled:
           type: boolean
+    WebhookEvent:
+      type: string
+      enum:
+      - mission.scheduled
+      - mission.started
+      - mission.completed
+      - mission.failed
+      - processing.started
+      - processing.completed
     ErrorResponse:
       type: object
       required:
@@ -393,6 +396,17 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    UpdateWebhookRequest:
+      type: object
+      properties:
+        url:
+          type: string
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEvent'
+        enabled:
+          type: boolean
     PaginationMeta:
       type: object
       required:
@@ -406,6 +420,41 @@ components:
         total:
           type: integer
           description: Total matching results across all pages; included when cheaply computable
+    Webhook:
+      type: object
+      required:
+      - id
+      - organizationId
+      - url
+      - secret
+      - events
+      - enabled
+      - deletedAt
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        url:
+          type: string
+        secret:
+          type: string
+          description: HMAC-SHA256 signing secret
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEvent'
+        enabled:
+          type: boolean
+        deletedAt:
+          type:
+          - number
+          - 'null'
+        createdAt:
+          type: number
     WebhookDelivery:
       type: object
       required:
@@ -443,89 +492,7 @@ components:
           type:
           - string
           - 'null'
-    CreateWebhookRequest:
-      type: object
-      required:
-      - url
-      - events
-      properties:
-        url:
-          type: string
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/WebhookEvent'
-        enabled:
-          type: boolean
-    Webhook:
-      type: object
-      required:
-      - id
-      - organizationId
-      - url
-      - secret
-      - events
-      - enabled
-      - deletedAt
-      - createdAt
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        url:
-          type: string
-        secret:
-          type: string
-          description: HMAC-SHA256 signing secret
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/WebhookEvent'
-        enabled:
-          type: boolean
-        deletedAt:
-          type:
-          - number
-          - 'null'
-        createdAt:
-          type: number
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
-      schema:
-        type: string
-        format: uuid
   responses:
-    Conflict:
-      description: Conflict (duplicate resource, in-use resource, or undo conflict)
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     Forbidden:
       description: Insufficient permissions
       headers:
@@ -537,15 +504,6 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
       description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    BadRequest:
-      description: Bad request or validation error
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -578,15 +536,43 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict (duplicate resource, in-use resource, or undo conflict)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   parameters:
-    LimitParam:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-      description: Page size (default 50, max 200)
     IdempotencyKeyHeader:
       name: Idempotency-Key
       in: header
@@ -595,12 +581,26 @@ components:
         type: string
         format: uuid
       description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
     CursorParam:
       name: cursor
       in: query
       schema:
         type: string
       description: Opaque pagination cursor from a previous response
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
+      schema:
+        type: string
+        format: uuid
   securitySchemes:
     BearerAuth:
       type: http

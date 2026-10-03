@@ -305,31 +305,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
-  headers:
-    XRequestId:
-      description: Unique request identifier (UUID)
-      schema:
-        type: string
-        format: uuid
   responses:
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     Forbidden:
       description: Insufficient permissions
       headers:
@@ -341,15 +317,6 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
       description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    BadRequest:
-      description: Bad request or validation error
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -382,6 +349,62 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+    MediaSourceFilter:
+      name: mediaSource[]
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - drone
+          - screenshot
+          - upload
+          - contractor
+          - cvat_crop
+      description: Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint.
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   schemas:
     ErrorResponse:
       type: object
@@ -417,38 +440,6 @@ components:
         total:
           type: integer
           description: Total matching results across all pages; included when cheaply computable
-    AssetInspection:
-      type: object
-      required:
-      - id
-      - organizationId
-      - assetId
-      - missionId
-      - siteInspectionId
-      - deletedAt
-      - createdAt
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        assetId:
-          type: string
-          format: uuid
-        missionId:
-          type: string
-          format: uuid
-        siteInspectionId:
-          type: string
-          format: uuid
-        deletedAt:
-          type:
-          - number
-          - 'null'
-        createdAt:
-          type: number
     SiteInspection:
       type: object
       required:
@@ -501,35 +492,44 @@ components:
         not_capturable:
           type: boolean
           description: True only for synthesized "not capturable" placeholder rows returned when `includeUncapturable=true` (the site is tagged `inaccessible` and no media was captured); these have no backing site_inspections row (the id reuses the site id, so do not refetch via GET /inspections/{id}). Absent/false for real inspections.
-  parameters:
-    LimitParam:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-      description: Page size (default 50, max 200)
-    MediaSourceFilter:
-      name: mediaSource[]
-      in: query
-      schema:
-        type: array
-        items:
+    AssetInspection:
+      type: object
+      required:
+      - id
+      - organizationId
+      - assetId
+      - missionId
+      - siteInspectionId
+      - deletedAt
+      - createdAt
+      properties:
+        id:
           type: string
-          enum:
-          - drone
-          - screenshot
-          - upload
-          - contractor
-          - cvat_crop
-      description: Optional allowlist applied to expanded `media` rows. When supplied, only `mission_media` rows whose `source` is in the list are returned in the expanded `media` field; non-media expansions (e.g. `site`, `cluster`) ignore the filter. Empty/omitted means no filtering. The dashboard's site-level photo carousel uses this to keep `cvat_crop` derivative crops out while still letting `/asset-inspections` surface them under `asset_inspection_media`. Allowed values mirror the `mission_media.source` CHECK constraint.
-    CursorParam:
-      name: cursor
-      in: query
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        assetId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        siteInspectionId:
+          type: string
+          format: uuid
+        deletedAt:
+          type:
+          - number
+          - 'null'
+        createdAt:
+          type: number
+  headers:
+    XRequestId:
+      description: Unique request identifier (UUID)
       schema:
         type: string
-      description: Opaque pagination cursor from a previous response
+        format: uuid
   securitySchemes:
     BearerAuth:
       type: http

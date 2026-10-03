@@ -490,112 +490,13 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   schemas:
-    GimbalOrientation:
+    CreateMediaCommentRequest:
       type: object
       required:
-      - yaw
-      - pitch
-      - roll
+      - text
       properties:
-        yaw:
-          type: number
-          description: Gimbal yaw in degrees
-        pitch:
-          type: number
-          description: Gimbal pitch in degrees
-        roll:
-          type: number
-          description: Gimbal roll in degrees
-    ErrorResponse:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    GeoLocation:
-      type: object
-      required:
-      - lat
-      - lng
-      properties:
-        lat:
-          type: number
-        lng:
-          type: number
-        altitude:
-          type: number
-    MediaType:
-      type: string
-      enum:
-      - image
-      - video
-    CaptureType:
-      type:
-      - string
-      - 'null'
-      enum:
-      - rgb
-      - thermal
-      description: Spectral modality of the frame, served directly from mission_media.capture_type (the single source of truth). null means the modality is unknown (not yet classified); it is never coerced to rgb.
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
-    CreateMediaDownloadUrlRequest:
-      type: object
-      required:
-      - missionId
-      properties:
-        missionId:
+        text:
           type: string
-          format: uuid
-        siteId:
-          type: string
-          format: uuid
-          description: Optional — narrows the download to a single site.
-        mediaIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-          description: 'Optional — narrows the download to a specific list of media rows.
-
-            When present, takes precedence over `siteId`.
-
-            '
-        includeEvidenceCrops:
-          type: boolean
-          description: 'Optional — opts the zip into the annotated evidence-crop pass
-
-            (mirrors `includeEvidenceCrops` on /media/download.zip). Folded
-
-            into the signed URL''s HMAC claims.
-
-            '
     MissionMedia:
       type: object
       required:
@@ -700,6 +601,22 @@ components:
           description: 'Measured per-image display ramp: ordered hex color stops (cold->hot, e.g. ["#151515", ..., "#f7f7f7"]) recovered by correlating the frame''s temperature grid with its rendered pixels. The client renders these stops directly as the thermal scale-bar gradient (top=hot), so the bar matches the frame''s actual pixels for any palette — including Skydio''s per-image isotherm overlay, which a palette name cannot describe. This is a DISPLAY fact, distinct from captureType (spectral modality) and thermalRange (temperature data). null when the frame has no measured ramp, so the overlay hides.'
           items:
             type: string
+    GimbalOrientation:
+      type: object
+      required:
+      - yaw
+      - pitch
+      - roll
+      properties:
+        yaw:
+          type: number
+          description: Gimbal yaw in degrees
+        pitch:
+          type: number
+          description: Gimbal pitch in degrees
+        roll:
+          type: number
+          description: Gimbal roll in degrees
     GeoPathPoint:
       type: object
       required:
@@ -715,13 +632,6 @@ components:
           type: number
         altitude:
           type: number
-    CreateMediaCommentRequest:
-      type: object
-      required:
-      - text
-      properties:
-        text:
-          type: string
     CreateMediaRequest:
       type: object
       required:
@@ -752,16 +662,96 @@ components:
         geoLocation:
           allOf:
           - $ref: '#/components/schemas/GeoLocation'
-    Resolution:
+    ErrorResponse:
       type: object
       required:
-      - width
-      - height
+      - error
       properties:
-        width:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    CreateMediaDownloadUrlRequest:
+      type: object
+      required:
+      - missionId
+      properties:
+        missionId:
+          type: string
+          format: uuid
+        siteId:
+          type: string
+          format: uuid
+          description: Optional — narrows the download to a single site.
+        mediaIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: 'Optional — narrows the download to a specific list of media rows.
+
+            When present, takes precedence over `siteId`.
+
+            '
+        includeEvidenceCrops:
+          type: boolean
+          description: 'Optional — opts the zip into the annotated evidence-crop pass
+
+            (mirrors `includeEvidenceCrops` on /media/download.zip). Folded
+
+            into the signed URL''s HMAC claims.
+
+            '
+    GeoLocation:
+      type: object
+      required:
+      - lat
+      - lng
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+        altitude:
+          type: number
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
           type: integer
-        height:
-          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    CaptureType:
+      type:
+      - string
+      - 'null'
+      enum:
+      - rgb
+      - thermal
+      description: Spectral modality of the frame, served directly from mission_media.capture_type (the single source of truth). null means the modality is unknown (not yet classified); it is never coerced to rgb.
+    MediaType:
+      type: string
+      enum:
+      - image
+      - video
     MediaComment:
       type: object
       required:
@@ -819,13 +809,17 @@ components:
                   type:
                   - string
                   - 'null'
+    Resolution:
+      type: object
+      required:
+      - width
+      - height
+      properties:
+        width:
+          type: integer
+        height:
+          type: integer
   parameters:
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
     IdempotencyKeyHeader:
       name: Idempotency-Key
       in: header
@@ -842,6 +836,12 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   responses:
     TooManyRequests:
       description: Rate limit exceeded
@@ -868,6 +868,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     NotFound:
       description: Resource not found
       headers:
@@ -886,15 +895,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
       description: Authentication required
       headers:
@@ -904,8 +904,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    BadRequest:
-      description: Bad request or validation error
+    InternalError:
+      description: Internal server error
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
