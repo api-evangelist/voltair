@@ -56,6 +56,78 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   schemas:
+    PermissionLevel:
+      type: string
+      enum:
+      - none
+      - read
+      - write
+    UserStatus:
+      type: string
+      enum:
+      - active
+      - invited
+      - deactivated
+    Role:
+      type: object
+      required:
+      - id
+      - name
+      - description
+      - permissions
+      - isSystem
+      - canSwitchOrganizations
+      - deletedAt
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+          description: NULL for global roles (e.g. super-admin)
+        slug:
+          type:
+          - string
+          - 'null'
+          description: Stable identifier for the super-admin role
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+        isSystem:
+          type: boolean
+        canSwitchOrganizations:
+          type: boolean
+        deletedAt:
+          type:
+          - number
+          - 'null'
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
+    PermissionResource:
+      type: string
+      enum:
+      - sites
+      - missions
+      - media
+      - organization
+      - users
+      - roles
+      - billing
+      - developer
+      - events
+      - transactions
     User:
       type: object
       required:
@@ -106,25 +178,6 @@ components:
           type: number
         updatedAt:
           type: number
-    UserStatus:
-      type: string
-      enum:
-      - active
-      - invited
-      - deactivated
-    PermissionResource:
-      type: string
-      enum:
-      - sites
-      - missions
-      - media
-      - organization
-      - users
-      - roles
-      - billing
-      - developer
-      - events
-      - transactions
     ErrorResponse:
       type: object
       required:
@@ -156,60 +209,16 @@ components:
           $ref: '#/components/schemas/PermissionResource'
         level:
           $ref: '#/components/schemas/PermissionLevel'
-    Role:
-      type: object
-      required:
-      - id
-      - name
-      - description
-      - permissions
-      - isSystem
-      - canSwitchOrganizations
-      - deletedAt
-      - createdAt
-      - updatedAt
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type:
-          - string
-          - 'null'
-          format: uuid
-          description: NULL for global roles (e.g. super-admin)
-        slug:
-          type:
-          - string
-          - 'null'
-          description: Stable identifier for the super-admin role
-        name:
-          type: string
-        description:
-          type: string
-        permissions:
-          type: array
-          items:
-            $ref: '#/components/schemas/Permission'
-        isSystem:
-          type: boolean
-        canSwitchOrganizations:
-          type: boolean
-        deletedAt:
-          type:
-          - number
-          - 'null'
-        createdAt:
-          type: number
-        updatedAt:
-          type: number
-    PermissionLevel:
-      type: string
-      enum:
-      - none
-      - read
-      - write
   responses:
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
       description: Authentication required
       headers:
@@ -221,15 +230,6 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     NotFound:
       description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'

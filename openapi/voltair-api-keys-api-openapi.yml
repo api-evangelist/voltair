@@ -141,24 +141,6 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   responses:
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     TooManyRequests:
       description: Rate limit exceeded
       headers:
@@ -202,15 +184,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     InternalError:
       description: Internal server error
       headers:
@@ -220,29 +193,33 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-  parameters:
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
-      schema:
-        type: string
-        format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
-    LimitParam:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-      description: Page size (default 50, max 200)
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
     ApiKey:
       type: object
@@ -286,6 +263,33 @@ components:
           type:
           - number
           - 'null'
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    CreateApiKeyRequest:
+      type: object
+      required:
+      - name
+      - roleId
+      properties:
+        name:
+          type: string
+        roleId:
+          type: string
+          format: uuid
+        expiresAt:
+          type: number
+          description: Unix timestamp in milliseconds for key expiration
     ErrorResponse:
       type: object
       required:
@@ -307,19 +311,6 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
     ApiKeyWithRawKey:
       description: API key returned on creation, including the raw key shown only once
       allOf:
@@ -331,20 +322,29 @@ components:
           rawKey:
             type: string
             description: The raw API key; returned only on creation and cannot be retrieved again
-    CreateApiKeyRequest:
-      type: object
-      required:
-      - name
-      - roleId
-      properties:
-        name:
-          type: string
-        roleId:
-          type: string
-          format: uuid
-        expiresAt:
-          type: number
-          description: Unix timestamp in milliseconds for key expiration
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   headers:
     XRequestId:
       description: Unique request identifier (UUID)

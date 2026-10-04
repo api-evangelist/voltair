@@ -352,11 +352,8 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   schemas:
-    CreateWebhookRequest:
+    UpdateWebhookRequest:
       type: object
-      required:
-      - url
-      - events
       properties:
         url:
           type: string
@@ -366,38 +363,11 @@ components:
             $ref: '#/components/schemas/WebhookEvent'
         enabled:
           type: boolean
-    WebhookEvent:
-      type: string
-      enum:
-      - mission.scheduled
-      - mission.started
-      - mission.completed
-      - mission.failed
-      - processing.started
-      - processing.completed
-    ErrorResponse:
+    CreateWebhookRequest:
       type: object
       required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    UpdateWebhookRequest:
-      type: object
+      - url
+      - events
       properties:
         url:
           type: string
@@ -455,6 +425,27 @@ components:
           - 'null'
         createdAt:
           type: number
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
     WebhookDelivery:
       type: object
       required:
@@ -492,25 +483,16 @@ components:
           type:
           - string
           - 'null'
+    WebhookEvent:
+      type: string
+      enum:
+      - mission.scheduled
+      - mission.started
+      - mission.completed
+      - mission.failed
+      - processing.started
+      - processing.completed
   responses:
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     TooManyRequests:
       description: Rate limit exceeded
       headers:
@@ -554,15 +536,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     InternalError:
       description: Internal server error
       headers:
@@ -572,15 +545,34 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   parameters:
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
-      schema:
-        type: string
-        format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
     LimitParam:
       name: limit
       in: query
@@ -589,6 +581,14 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
     CursorParam:
       name: cursor
       in: query

@@ -331,84 +331,10 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   schemas:
-    CreateMissionRequest:
-      type: object
-      required:
-      - name
-      - description
-      - status
-      - detailLevel
-      - sensors
-      - scheduledFor
-      - estimatedCompletionTime
-      - estimatedCost
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        status:
-          $ref: '#/components/schemas/MissionStatus'
-        detailLevel:
-          $ref: '#/components/schemas/DetailLevel'
-        sensors:
-          $ref: '#/components/schemas/SensorRequirements'
-        scheduledFor:
-          type: number
-          description: Unix timestamp in milliseconds
-        estimatedCompletionTime:
-          type: number
-          description: Unix timestamp in milliseconds
-        dueDate:
-          type: number
-          description: Unix timestamp in milliseconds
-        recurrence:
-          $ref: '#/components/schemas/Recurrence'
-        estimatedCost:
-          type: number
-        siteGeometries:
-          type: array
-          items:
-            type: string
-            enum:
-            - point
-            - line
-            - area
-        siteIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-          description: Individual site IDs to include in the mission
-        clusterIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-          description: Cluster IDs; all sites in these clusters will be included
     ThermalRequirement:
       type: string
       enum:
       - 640x480
-      - any
-      - 'no'
-    SensorRequirements:
-      type: object
-      required:
-      - camera
-      - lidar
-      - thermal
-      properties:
-        camera:
-          $ref: '#/components/schemas/SensorRequirement'
-        lidar:
-          $ref: '#/components/schemas/LidarRequirement'
-        thermal:
-          $ref: '#/components/schemas/ThermalRequirement'
-    SensorRequirement:
-      type: string
-      enum:
-      - hi-def
       - any
       - 'no'
     Recurrence:
@@ -418,43 +344,6 @@ components:
       - weekly
       - monthly
       - yearly
-    UpdateMissionRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        status:
-          $ref: '#/components/schemas/MissionStatus'
-        detailLevel:
-          $ref: '#/components/schemas/DetailLevel'
-        sensors:
-          $ref: '#/components/schemas/SensorRequirements'
-        scheduledFor:
-          type: number
-        estimatedCompletionTime:
-          type: number
-        dueDate:
-          type: number
-        recurrence:
-          $ref: '#/components/schemas/Recurrence'
-        estimatedCost:
-          type: number
-        siteGeometries:
-          type: array
-          items:
-            type: string
-            enum:
-            - point
-            - line
-            - area
-    LidarRequirement:
-      type: string
-      enum:
-      - 'yes'
-      - 'no'
-      - any
     Mission:
       type: object
       required:
@@ -533,6 +422,46 @@ components:
           - 'null'
         updatedAt:
           type: number
+    MissionStatus:
+      type: string
+      enum:
+      - scheduled
+      - canceled
+      - in-progress
+      - recurring
+      - complete
+    LidarRequirement:
+      type: string
+      enum:
+      - 'yes'
+      - 'no'
+      - any
+    SensorRequirements:
+      type: object
+      required:
+      - camera
+      - lidar
+      - thermal
+      properties:
+        camera:
+          $ref: '#/components/schemas/SensorRequirement'
+        lidar:
+          $ref: '#/components/schemas/LidarRequirement'
+        thermal:
+          $ref: '#/components/schemas/ThermalRequirement'
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
     MissionSitesRequest:
       type: object
       properties:
@@ -546,12 +475,6 @@ components:
           items:
             type: string
             format: uuid
-    DetailLevel:
-      type: string
-      enum:
-      - low
-      - medium
-      - high
     ErrorResponse:
       type: object
       required:
@@ -573,36 +496,105 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
-    MissionStatus:
+    DetailLevel:
       type: string
       enum:
-      - scheduled
-      - canceled
-      - in-progress
-      - recurring
-      - complete
+      - low
+      - medium
+      - high
+    CreateMissionRequest:
+      type: object
+      required:
+      - name
+      - description
+      - status
+      - detailLevel
+      - sensors
+      - scheduledFor
+      - estimatedCompletionTime
+      - estimatedCost
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MissionStatus'
+        detailLevel:
+          $ref: '#/components/schemas/DetailLevel'
+        sensors:
+          $ref: '#/components/schemas/SensorRequirements'
+        scheduledFor:
+          type: number
+          description: Unix timestamp in milliseconds
+        estimatedCompletionTime:
+          type: number
+          description: Unix timestamp in milliseconds
+        dueDate:
+          type: number
+          description: Unix timestamp in milliseconds
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        estimatedCost:
+          type: number
+        siteGeometries:
+          type: array
+          items:
+            type: string
+            enum:
+            - point
+            - line
+            - area
+        siteIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Individual site IDs to include in the mission
+        clusterIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Cluster IDs; all sites in these clusters will be included
+    SensorRequirement:
+      type: string
+      enum:
+      - hi-def
+      - any
+      - 'no'
+    UpdateMissionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/MissionStatus'
+        detailLevel:
+          $ref: '#/components/schemas/DetailLevel'
+        sensors:
+          $ref: '#/components/schemas/SensorRequirements'
+        scheduledFor:
+          type: number
+        estimatedCompletionTime:
+          type: number
+        dueDate:
+          type: number
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        estimatedCost:
+          type: number
+        siteGeometries:
+          type: array
+          items:
+            type: string
+            enum:
+            - point
+            - line
+            - area
   parameters:
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
-      schema:
-        type: string
-        format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
     LimitParam:
       name: limit
       in: query
@@ -611,6 +603,14 @@ components:
         minimum: 1
         maximum: 200
       description: Page size (default 50, max 200)
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
     CursorParam:
       name: cursor
       in: query
@@ -618,6 +618,60 @@ components:
         type: string
       description: Opaque pagination cursor from a previous response
   responses:
+    Conflict:
+      description: Conflict (duplicate resource, in-use resource, or undo conflict)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     TooManyRequests:
       description: Rate limit exceeded
       headers:
@@ -639,60 +693,6 @@ components:
           schema:
             type: integer
           description: Seconds until the next rate limit window
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    BadRequest:
-      description: Bad request or validation error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Conflict:
-      description: Conflict (duplicate resource, in-use resource, or undo conflict)
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
       content:
         application/json:
           schema:

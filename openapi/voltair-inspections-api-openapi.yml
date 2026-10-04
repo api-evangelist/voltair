@@ -306,24 +306,6 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   responses:
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     TooManyRequests:
       description: Rate limit exceeded
       headers:
@@ -358,8 +340,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
+    InternalError:
+      description: Internal server error
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -367,8 +349,26 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
       headers:
         X-Request-Id:
           $ref: '#/components/headers/XRequestId'
@@ -406,6 +406,19 @@ components:
         type: string
       description: Opaque pagination cursor from a previous response
   schemas:
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
     ErrorResponse:
       type: object
       required:
@@ -427,19 +440,6 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
     SiteInspection:
       type: object
       required:

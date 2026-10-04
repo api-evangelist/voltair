@@ -377,30 +377,32 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
-  parameters:
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
-      schema:
-        type: string
-        format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
-    LimitParam:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-      description: Page size (default 50, max 200)
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
   schemas:
+    SiteProperties:
+      description: Site-type-specific properties; currently only LineProperties
+      oneOf:
+      - $ref: '#/components/schemas/LineProperties'
+    CameraOrientation:
+      type: object
+      required:
+      - center
+      - zoom
+      - bearing
+      - pitch
+      properties:
+        center:
+          type: array
+          description: '[longitude, latitude]'
+          items:
+            type: number
+          minItems: 2
+          maxItems: 2
+        zoom:
+          type: number
+        bearing:
+          type: number
+        pitch:
+          type: number
     SiteGeometry:
       description: GeoJSON geometry for sites (Point, LineString, or Polygon)
       oneOf:
@@ -413,24 +415,83 @@ components:
           Point: '#/components/schemas/PointGeometry'
           LineString: '#/components/schemas/LineStringGeometry'
           Polygon: '#/components/schemas/PolygonGeometry'
-    SiteProperties:
-      description: Site-type-specific properties; currently only LineProperties
-      oneOf:
-      - $ref: '#/components/schemas/LineProperties'
-    SiteType:
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    AssetPriority:
       type: string
-      description: Union of PointSiteType, AreaSiteType, and LineSiteType
       enum:
-      - distribution_pole
-      - transmission_pole
-      - substation
-      - utility_substation
-      - transmission_line
-      - distribution_line
-      - pipeline
-      - railway
-      - road
-      - other
+      - high
+      - medium
+      - low
+      - none
+    LineStringGeometry:
+      type: object
+      required:
+      - type
+      - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+          - LineString
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+            minItems: 2
+            maxItems: 3
+          minItems: 2
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    PointGeometry:
+      type: object
+      required:
+      - type
+      - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+          - Point
+        coordinates:
+          type: array
+          description: '[longitude, latitude] or [longitude, latitude, altitude]'
+          items:
+            type: number
+          minItems: 2
+          maxItems: 3
     UpdateSiteRequest:
       type: object
       properties:
@@ -456,95 +517,6 @@ components:
           $ref: '#/components/schemas/SiteGeometry'
         properties:
           $ref: '#/components/schemas/SiteProperties'
-    ErrorResponse:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    LineStringGeometry:
-      type: object
-      required:
-      - type
-      - coordinates
-      properties:
-        type:
-          type: string
-          enum:
-          - LineString
-        coordinates:
-          type: array
-          items:
-            type: array
-            items:
-              type: number
-            minItems: 2
-            maxItems: 3
-          minItems: 2
-    LineProperties:
-      type: object
-      required:
-      - geometryType
-      - width
-      properties:
-        geometryType:
-          type: string
-          enum:
-          - line
-        width:
-          type: number
-    PointGeometry:
-      type: object
-      required:
-      - type
-      - coordinates
-      properties:
-        type:
-          type: string
-          enum:
-          - Point
-        coordinates:
-          type: array
-          description: '[longitude, latitude] or [longitude, latitude, altitude]'
-          items:
-            type: number
-          minItems: 2
-          maxItems: 3
-    AssetPriority:
-      type: string
-      enum:
-      - high
-      - medium
-      - low
-      - none
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
     PolygonGeometry:
       type: object
       required:
@@ -566,27 +538,35 @@ components:
               minItems: 2
               maxItems: 3
             minItems: 4
-    CameraOrientation:
+    CreateSiteRequest:
       type: object
       required:
-      - center
-      - zoom
-      - bearing
-      - pitch
+      - name
+      - siteType
+      - geometry
       properties:
-        center:
+        externalId:
+          type: string
+          description: Optional customer-facing identifier
+        name:
+          type: string
+        siteType:
+          $ref: '#/components/schemas/SiteType'
+        description:
+          type: string
+        tags:
           type: array
-          description: '[longitude, latitude]'
           items:
-            type: number
-          minItems: 2
-          maxItems: 2
-        zoom:
-          type: number
-        bearing:
-          type: number
-        pitch:
-          type: number
+            type: string
+        clusterId:
+          type: string
+          format: uuid
+        cameraOrientation:
+          $ref: '#/components/schemas/CameraOrientation'
+        geometry:
+          $ref: '#/components/schemas/SiteGeometry'
+        properties:
+          $ref: '#/components/schemas/SiteProperties'
     Site:
       type: object
       required:
@@ -644,36 +624,110 @@ components:
           type: number
         updatedAt:
           type: number
-    CreateSiteRequest:
+    LineProperties:
       type: object
       required:
-      - name
-      - siteType
-      - geometry
+      - geometryType
+      - width
       properties:
-        externalId:
+        geometryType:
           type: string
-          description: Optional customer-facing identifier
-        name:
-          type: string
-        siteType:
-          $ref: '#/components/schemas/SiteType'
-        description:
-          type: string
-        tags:
-          type: array
-          items:
-            type: string
-        clusterId:
-          type: string
-          format: uuid
-        cameraOrientation:
-          $ref: '#/components/schemas/CameraOrientation'
-        geometry:
-          $ref: '#/components/schemas/SiteGeometry'
-        properties:
-          $ref: '#/components/schemas/SiteProperties'
+          enum:
+          - line
+        width:
+          type: number
+    SiteType:
+      type: string
+      description: Union of PointSiteType, AreaSiteType, and LineSiteType
+      enum:
+      - distribution_pole
+      - transmission_pole
+      - substation
+      - utility_substation
+      - transmission_line
+      - distribution_line
+      - pipeline
+      - railway
+      - road
+      - other
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   responses:
+    Conflict:
+      description: Conflict (duplicate resource, in-use resource, or undo conflict)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     TooManyRequests:
       description: Rate limit exceeded
       headers:
@@ -695,60 +749,6 @@ components:
           schema:
             type: integer
           description: Seconds until the next rate limit window
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    BadRequest:
-      description: Bad request or validation error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Conflict:
-      description: Conflict (duplicate resource, in-use resource, or undo conflict)
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
       content:
         application/json:
           schema:

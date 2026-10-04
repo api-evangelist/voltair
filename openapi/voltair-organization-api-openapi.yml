@@ -85,6 +85,68 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
+  responses:
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
     Organization:
       type: object
@@ -122,25 +184,17 @@ components:
         updatedAt:
           type: number
           description: Unix timestamp in milliseconds
-    Address:
+    UpdateOrganizationRequest:
       type: object
-      required:
-      - street
-      - city
-      - state
-      - zip
-      - country
       properties:
-        street:
+        name:
           type: string
-        city:
+        logoUrl:
           type: string
-        state:
+        contactEmail:
           type: string
-        zip:
-          type: string
-        country:
-          type: string
+        address:
+          $ref: '#/components/schemas/Address'
     ErrorResponse:
       type: object
       required:
@@ -162,79 +216,25 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    UpdateOrganizationRequest:
+    Address:
       type: object
+      required:
+      - street
+      - city
+      - state
+      - zip
+      - country
       properties:
-        name:
+        street:
           type: string
-        logoUrl:
+        city:
           type: string
-        contactEmail:
+        state:
           type: string
-        address:
-          $ref: '#/components/schemas/Address'
-  responses:
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    TooManyRequests:
-      description: Rate limit exceeded
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-        X-RateLimit-Limit:
-          schema:
-            type: integer
-          description: Maximum requests per window
-        X-RateLimit-Remaining:
-          schema:
-            type: integer
-          description: Requests remaining in current window
-        X-RateLimit-Reset:
-          schema:
-            type: number
-          description: Unix timestamp (ms) when the window resets
-        Retry-After:
-          schema:
-            type: integer
-          description: Seconds until the next rate limit window
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    BadRequest:
-      description: Bad request or validation error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
+        zip:
+          type: string
+        country:
+          type: string
   headers:
     XRequestId:
       description: Unique request identifier (UUID)

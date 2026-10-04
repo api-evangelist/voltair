@@ -277,58 +277,110 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
+  responses:
+    Conflict:
+      description: Conflict (duplicate resource, in-use resource, or undo conflict)
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
-    ClusterGeometry:
-      description: GeoJSON geometry for clusters (Polygon, LineString, or MultiLineString)
-      oneOf:
-      - $ref: '#/components/schemas/PolygonGeometry'
-      - $ref: '#/components/schemas/LineStringGeometry'
-      - $ref: '#/components/schemas/MultiLineStringGeometry'
-      discriminator:
-        propertyName: type
-        mapping:
-          Polygon: '#/components/schemas/PolygonGeometry'
-          LineString: '#/components/schemas/LineStringGeometry'
-          MultiLineString: '#/components/schemas/MultiLineStringGeometry'
-    MultiLineStringGeometry:
-      type: object
-      required:
-      - type
-      - coordinates
-      properties:
-        type:
-          type: string
-          enum:
-          - MultiLineString
-        coordinates:
-          type: array
-          items:
-            type: array
-            items:
-              type: array
-              items:
-                type: number
-              minItems: 2
-              maxItems: 3
-            minItems: 2
-    GeometryCounts:
-      type: object
-      required:
-      - point
-      - line
-      - area
-      properties:
-        point:
-          type: integer
-        line:
-          type: integer
-        area:
-          type: integer
-    ClusterLevel:
-      type: integer
-      minimum: 1
-      maximum: 3
-      description: 1 = coarsest, 3 = finest
     UpdateClusterRequest:
       type: object
       properties:
@@ -361,6 +413,64 @@ components:
           maxItems: 4
         geometry:
           $ref: '#/components/schemas/ClusterGeometry'
+    ClusterLevel:
+      type: integer
+      minimum: 1
+      maximum: 3
+      description: 1 = coarsest, 3 = finest
+    MultiLineStringGeometry:
+      type: object
+      required:
+      - type
+      - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+          - MultiLineString
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: array
+              items:
+                type: number
+              minItems: 2
+              maxItems: 3
+            minItems: 2
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    LineStringGeometry:
+      type: object
+      required:
+      - type
+      - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+          - LineString
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+            minItems: 2
+            maxItems: 3
+          minItems: 2
     ErrorResponse:
       type: object
       required:
@@ -382,6 +492,52 @@ components:
               type: object
               additionalProperties: true
               description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    ClusterGeometry:
+      description: GeoJSON geometry for clusters (Polygon, LineString, or MultiLineString)
+      oneOf:
+      - $ref: '#/components/schemas/PolygonGeometry'
+      - $ref: '#/components/schemas/LineStringGeometry'
+      - $ref: '#/components/schemas/MultiLineStringGeometry'
+      discriminator:
+        propertyName: type
+        mapping:
+          Polygon: '#/components/schemas/PolygonGeometry'
+          LineString: '#/components/schemas/LineStringGeometry'
+          MultiLineString: '#/components/schemas/MultiLineStringGeometry'
+    PolygonGeometry:
+      type: object
+      required:
+      - type
+      - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+          - Polygon
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: array
+              items:
+                type: number
+              minItems: 2
+              maxItems: 3
+            minItems: 4
+    GeometryCounts:
+      type: object
+      required:
+      - point
+      - line
+      - area
+      properties:
+        point:
+          type: integer
+        line:
+          type: integer
+        area:
+          type: integer
     CreateClusterRequest:
       type: object
       required:
@@ -421,59 +577,6 @@ components:
           maxItems: 4
         geometry:
           $ref: '#/components/schemas/ClusterGeometry'
-    LineStringGeometry:
-      type: object
-      required:
-      - type
-      - coordinates
-      properties:
-        type:
-          type: string
-          enum:
-          - LineString
-        coordinates:
-          type: array
-          items:
-            type: array
-            items:
-              type: number
-            minItems: 2
-            maxItems: 3
-          minItems: 2
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
-    PolygonGeometry:
-      type: object
-      required:
-      - type
-      - coordinates
-      properties:
-        type:
-          type: string
-          enum:
-          - Polygon
-        coordinates:
-          type: array
-          items:
-            type: array
-            items:
-              type: array
-              items:
-                type: number
-              minItems: 2
-              maxItems: 3
-            minItems: 4
     Cluster:
       type: object
       required:
@@ -539,109 +642,6 @@ components:
           type: number
         updatedAt:
           type: number
-  parameters:
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
-      schema:
-        type: string
-        format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
-    LimitParam:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-      description: Page size (default 50, max 200)
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
-  responses:
-    TooManyRequests:
-      description: Rate limit exceeded
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-        X-RateLimit-Limit:
-          schema:
-            type: integer
-          description: Maximum requests per window
-        X-RateLimit-Remaining:
-          schema:
-            type: integer
-          description: Requests remaining in current window
-        X-RateLimit-Reset:
-          schema:
-            type: number
-          description: Unix timestamp (ms) when the window resets
-        Retry-After:
-          schema:
-            type: integer
-          description: Seconds until the next rate limit window
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    BadRequest:
-      description: Bad request or validation error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Conflict:
-      description: Conflict (duplicate resource, in-use resource, or undo conflict)
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
   headers:
     XRequestId:
       description: Unique request identifier (UUID)

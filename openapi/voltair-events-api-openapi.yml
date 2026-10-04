@@ -119,7 +119,142 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 components:
+  responses:
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Maximum requests per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Requests remaining in current window
+        X-RateLimit-Reset:
+          schema:
+            type: number
+          description: Unix timestamp (ms) when the window resets
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the next rate limit window
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   schemas:
+    EventResourceType:
+      type: string
+      enum:
+      - site
+      - cluster
+      - mission
+      - cluster_visit
+      - site_visit
+      - mission_media
+      - asset
+      - defect
+      - site_inspection
+      - asset_inspection
+      - organization
+      - user
+      - role
+      - api_key
+      - webhook
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    EventActionType:
+      type: string
+      enum:
+      - create
+      - update
+      - delete
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
     Event:
       type: object
       required:
@@ -210,141 +345,6 @@ components:
           - 'null'
           additionalProperties: true
           description: Full row for create; delta for update; null for delete
-    EventActionType:
-      type: string
-      enum:
-      - create
-      - update
-      - delete
-    ErrorResponse:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
-    EventResourceType:
-      type: string
-      enum:
-      - site
-      - cluster
-      - mission
-      - cluster_visit
-      - site_visit
-      - mission_media
-      - asset
-      - defect
-      - site_inspection
-      - asset_inspection
-      - organization
-      - user
-      - role
-      - api_key
-      - webhook
-  responses:
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    TooManyRequests:
-      description: Rate limit exceeded
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-        X-RateLimit-Limit:
-          schema:
-            type: integer
-          description: Maximum requests per window
-        X-RateLimit-Remaining:
-          schema:
-            type: integer
-          description: Requests remaining in current window
-        X-RateLimit-Reset:
-          schema:
-            type: number
-          description: Unix timestamp (ms) when the window resets
-        Retry-After:
-          schema:
-            type: integer
-          description: Seconds until the next rate limit window
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalError:
-      description: Internal server error
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-  parameters:
-    LimitParam:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-      description: Page size (default 50, max 200)
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
   headers:
     XRequestId:
       description: Unique request identifier (UUID)

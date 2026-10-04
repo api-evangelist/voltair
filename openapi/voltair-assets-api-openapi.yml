@@ -563,24 +563,6 @@ paths:
           $ref: '#/components/responses/InternalError'
 components:
   responses:
-    Forbidden:
-      description: Insufficient permissions
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     TooManyRequests:
       description: Rate limit exceeded
       headers:
@@ -615,15 +597,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      headers:
-        X-Request-Id:
-          $ref: '#/components/headers/XRequestId'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
     InternalError:
       description: Internal server error
       headers:
@@ -633,104 +606,34 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-  parameters:
-    IdempotencyKeyHeader:
-      name: Idempotency-Key
-      in: header
-      required: false
-      schema:
-        type: string
-        format: uuid
-      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
-    LimitParam:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-      description: Page size (default 50, max 200)
-    CursorParam:
-      name: cursor
-      in: query
-      schema:
-        type: string
-      description: Opaque pagination cursor from a previous response
+    Forbidden:
+      description: Insufficient permissions
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
-    Asset:
-      type: object
-      required:
-      - id
-      - organizationId
-      - siteId
-      - name
-      - priority
-      - deletedAt
-      - createdAt
-      - updatedAt
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        siteId:
-          type: string
-          format: uuid
-        name:
-          type: string
-        priority:
-          $ref: '#/components/schemas/AssetPriority'
-        deletedAt:
-          type:
-          - number
-          - 'null'
-        createdAt:
-          type: number
-        updatedAt:
-          type: number
-    AssetPriority:
-      type: string
-      enum:
-      - high
-      - medium
-      - low
-      - none
-    ErrorResponse:
-      type: object
-      required:
-      - error
-      properties:
-        error:
-          type: object
-          required:
-          - code
-          - message
-          properties:
-            code:
-              type: string
-              description: Machine-readable error code
-            message:
-              type: string
-              description: Human-readable description
-            details:
-              type: object
-              additionalProperties: true
-              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
-    PaginationMeta:
-      type: object
-      required:
-      - cursor
-      properties:
-        cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page; null when no more results
-        total:
-          type: integer
-          description: Total matching results across all pages; included when cheaply computable
     DefectEvidence:
       type: object
       required:
@@ -785,23 +688,17 @@ components:
           - 'null'
         createdAt:
           type: number
-    DefectPriorityMapping:
+    Asset:
       type: object
       required:
       - id
       - organizationId
-      - mapping
-      - version
-      - isActive
-      description: 'Per-org JSONB rule set mapping a CVAT
-
-        `(Equipment, Type, Defect)` tuple to an `asset_type` and a
-
-        `priority` integer (1..4). One active row per organization at a
-
-        time; saving a new version deactivates the prior active row.
-
-        '
+      - siteId
+      - name
+      - priority
+      - deletedAt
+      - createdAt
+      - updatedAt
       properties:
         id:
           type: string
@@ -809,19 +706,21 @@ components:
         organizationId:
           type: string
           format: uuid
-        mapping:
-          type: object
-          description: '`{ "<Equipment>": { "<Type>": { "asset_type": "<slug>", "defects": { "<Defect>": <int 1-4> } } } }`.
-
-            Use `"n/a"` as the `<Type>` key for CVAT labels with no
-
-            real subtype.
-
-            '
-        version:
-          type: integer
-        isActive:
-          type: boolean
+        siteId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        priority:
+          $ref: '#/components/schemas/AssetPriority'
+        deletedAt:
+          type:
+          - number
+          - 'null'
+        createdAt:
+          type: number
+        updatedAt:
+          type: number
     Defect:
       type: object
       required:
@@ -927,6 +826,107 @@ components:
           description: Populated only when `evidence` is requested via expand[]. Otherwise omitted.
           items:
             $ref: '#/components/schemas/DefectEvidence'
+    PaginationMeta:
+      type: object
+      required:
+      - cursor
+      properties:
+        cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page; null when no more results
+        total:
+          type: integer
+          description: Total matching results across all pages; included when cheaply computable
+    AssetPriority:
+      type: string
+      enum:
+      - high
+      - medium
+      - low
+      - none
+    ErrorResponse:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+            message:
+              type: string
+              description: Human-readable description
+            details:
+              type: object
+              additionalProperties: true
+              description: Optional structured info (e.g. field-level validation errors, conflictingEventIds)
+    DefectPriorityMapping:
+      type: object
+      required:
+      - id
+      - organizationId
+      - mapping
+      - version
+      - isActive
+      description: 'Per-org JSONB rule set mapping a CVAT
+
+        `(Equipment, Type, Defect)` tuple to an `asset_type` and a
+
+        `priority` integer (1..4). One active row per organization at a
+
+        time; saving a new version deactivates the prior active row.
+
+        '
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        mapping:
+          type: object
+          description: '`{ "<Equipment>": { "<Type>": { "asset_type": "<slug>", "defects": { "<Defect>": <int 1-4> } } } }`.
+
+            Use `"n/a"` as the `<Type>` key for CVAT labels with no
+
+            real subtype.
+
+            '
+        version:
+          type: integer
+        isActive:
+          type: boolean
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+      description: Page size (default 50, max 200)
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Idempotency key for POST requests. If a transaction with the same key already exists for the org, the server returns the original response without re-executing. Keys are valid for 48 hours.
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
   headers:
     XRequestId:
       description: Unique request identifier (UUID)
