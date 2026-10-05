@@ -1,0 +1,12 @@
+{
+ "url": "https://api.voltairlabs.com/openapi.yaml",
+ "requested_url": "https://api.voltairlabs.com/openapi.yaml",
+ "status": 200,
+ "content_type": "text/plain; charset=utf-8",
+ "bytes": 175311,
+ "sha256": "c9fe0f388ab1e164d9aa6313f1a6ed50a793a87beee14bc3eacacfb0727be0d2",
+ "fetched_at": "2026-10-04",
+ "fetched_by": "APIEvangelist-Harvest/1.0 (+https://apievangelist.com)",
+ "match": "equivalent",
+ "note": "Re-fetched from the provider by verify-openapi-sources.py; the provider's current document describes the same operations (Jaccard 1.0), but the bytes differ, so the archive is an earlier or reformatted copy."
+}
