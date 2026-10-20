@@ -1,0 +1,50 @@
+edges:
+- partner_name: FAA UAS Declaration of Compliance
+  partner: null
+  partner_match: register-name
+  type: contract
+  channel: regulator-register
+  relationship: standard-participant
+  direction: partner-built
+  evidence: https://uasdoc.faa.gov/listDocs/RID000002725
+  category: FAA-accepted UAS declaration of compliance
+  contract_reference:
+    register: FAA UAS Declaration of Compliance (uasdoc.faa.gov public DOC list)
+    standard: FAA UAS Declaration of Compliance (Remote ID / OOP)
+    spec_file: null
+    role: doc-manufacturer
+    registered_name: Voltair
+    register_id: RID000002725
+    matched_domain: null
+    matched_by: register-name
+    identity: register-name
+    identity_source: register-name
+    statuses:
+    - accepted
+    models:
+    - Faraday-1
+    certified_products:
+    - product: 'Remote ID: standard RID aircraft'
+      lapsed: false
+      latest_update: '2026-10-06'
+    signal_note: 'certified_products = one entry per PRODUCT TYPE (Remote ID aircraft / broadcast module / OOP category),
+      lapsed when every DOC of that type is rescinded; model and DOC counts are context, never counted. FAA-accepted
+      declarations (not self-filed): no address published, so the HQ check of self-filed registers does not apply'
+    detected_by: sweep-drones-airspace.py
+    detected: '2026-10-20'
+    identity_note: register gave only the name; exact normalised match to the repo's apis.yml name, one repo, Wikidata
+      P856 not contradicting (Kin 2026-10-20 decision 2)
+  detected_by: sweep-drones-airspace.py
+  first_seen: '2026-10-20'
+generated: '2026-10-20'
+method: searched
+source:
+- https://www.faa.gov/uas/getting_started/laanc
+- https://uasdoc.faa.gov/api/v1/publicDOCRev?pageIndex=0&itemsPerPage=2000
+- https://interussplatform.org/members/
+- https://gutma.org/full-members/
+checked:
+- https://gutma.org/full-members/
+- https://interussplatform.org/members/
+- https://uasdoc.faa.gov/api/v1/publicDOCRev?pageIndex=0&itemsPerPage=2000
+- https://www.faa.gov/uas/getting_started/laanc
