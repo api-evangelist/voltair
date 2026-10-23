@@ -592,3 +592,9 @@ components:
       in: header
       name: X-API-Key
       description: Organization-scoped API key
+x-provenance:
+  method: harvested
+  publisher: Voltair
+  source: https://api.voltairlabs.com/openapi.yaml
+  note: split by refine-openapis from the provider's own published document, verified by fetch (openapi/_original/*.fetch.json);
+    stamped by stamp-openapi-provenance.py (roadmap#793)
